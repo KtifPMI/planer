@@ -229,11 +229,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                       SnackBar(content: Text('${l10n.noUpdate} (${info.currentVersion})')),
                     );
                   }
-                } catch (_) {
+                } catch (e) {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.networkError)),
+                    SnackBar(content: Text('${l10n.networkError} (${e.runtimeType})')),
                   );
                 }
               },
