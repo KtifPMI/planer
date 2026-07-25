@@ -502,15 +502,6 @@ class _SetRowState extends State<_SetRow> {
       ),
     );
   }
-              widget.session.save();
-              widget.onSaved();
-            },
-            child: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.3)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // --- No workout today ---
