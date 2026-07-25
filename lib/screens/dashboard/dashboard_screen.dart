@@ -11,11 +11,26 @@ import '../../providers/finance_providers.dart';
 import '../../providers/workout_providers.dart';
 import '../../providers/planner_providers.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ref.invalidate(todayStatsProvider);
+    ref.invalidate(monthIncomeProvider);
+    ref.invalidate(monthExpenseProvider);
+    ref.invalidate(workoutCountThisMonthProvider);
+    ref.invalidate(weekAnalyticsProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final todayStats = ref.watch(todayStatsProvider);
@@ -118,14 +133,24 @@ class DashboardScreen extends ConsumerWidget {
         const Gap(12),
 
         // Workouts
-        ProgressCard(
-          title: l10n.workouts,
-          progress: workoutCount / 20,
-          subtitle: '$workoutCount / 20 ${l10n.month.toLowerCase()}',
-          icon: Icons.fitness_center,
-          color: AppColors.workoutPrimary,
-          onTap: () => context.go('/workouts'),
-        ),
+        if (workoutCount > 0)
+          ProgressCard(
+            title: l10n.workouts,
+            progress: workoutCount / 20,
+            subtitle: '$workoutCount / 20 ${l10n.month.toLowerCase()}',
+            icon: Icons.fitness_center,
+            color: AppColors.workoutPrimary,
+            onTap: () => context.go('/workouts'),
+          )
+        else
+          ProgressCard(
+            title: l10n.workouts,
+            progress: 0,
+            subtitle: l10n.workouts,
+            icon: Icons.fitness_center,
+            color: AppColors.workoutPrimary,
+            onTap: () => context.go('/workouts'),
+          ),
         const Gap(12),
 
         // Weekly planner

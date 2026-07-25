@@ -100,15 +100,21 @@ class FinanceScreen extends ConsumerWidget {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                height: 200,
-                child: PieChart(
-                  PieChartData(
-                    sections: _buildPieSections(categories, allCategories),
-                    centerSpaceRadius: 40,
-                    sectionsSpace: 2,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 200,
+                    child: PieChart(
+                      PieChartData(
+                        sections: _buildPieSections(categories, allCategories),
+                        centerSpaceRadius: 40,
+                        sectionsSpace: 2,
+                      ),
+                    ),
                   ),
-                ),
+                  const Gap(16),
+                  _buildLegend(categories, allCategories),
+                ],
               ),
             ),
           ),
@@ -162,35 +168,80 @@ class FinanceScreen extends ConsumerWidget {
     );
   }
 
+  static const _categoryColors = [
+    Color(0xFFFFE066),
+    Color(0xFF4ECDC4),
+    Color(0xFFFF6B6B),
+    Color(0xFF45B7D1),
+    Color(0xFF96CEB4),
+    Color(0xFFD4A574),
+    Color(0xFFFFA07A),
+    Color(0xFF98D8C8),
+    Color(0xFFF7DC6F),
+    Color(0xFFBB8FCE),
+  ];
+
+  Color _colorForCategoryId(String categoryId, int index) {
+    final hash = categoryId.hashCode;
+    return _categoryColors[hash.abs() % _categoryColors.length];
+  }
+
   List<PieChartSectionData> _buildPieSections(
     Map<String, double> categories,
     List<Category> allCategories,
   ) {
-    final colors = [
-      AppColors.primary,
-      AppColors.accent,
-      AppColors.warning,
-      AppColors.error,
-      AppColors.income,
-      const Color(0xFF9B59B6),
-      const Color(0xFF3498DB),
-      const Color(0xFFE67E22),
-      const Color(0xFF1ABC9C),
-      const Color(0xFFE74C3C),
-    ];
-
     final total = categories.values.fold(0.0, (s, v) => s + v);
     int i = 0;
     return categories.entries.map((e) {
       final percent = total > 0 ? (e.value / total * 100) : 0.0;
+      final color = _colorForCategoryId(e.key, i);
+      i++;
       return PieChartSectionData(
         value: e.value,
         title: '${percent.toStringAsFixed(0)}%',
-        color: colors[i % colors.length],
+        color: color,
         radius: 50,
         titleStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
       );
     }).toList();
+  }
+
+  Widget _buildLegend(
+    Map<String, double> categories,
+    List<Category> allCategories,
+  ) {
+    final total = categories.values.fold(0.0, (s, v) => s + v);
+    final catMap = {for (final c in allCategories) c.id: c};
+    int i = 0;
+
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      children: categories.entries.map((e) {
+        final cat = catMap[e.key];
+        final color = _colorForCategoryId(e.key, i);
+        final percent = total > 0 ? (e.value / total * 100) : 0.0;
+        i++;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            const Gap(4),
+            Text(
+              '${cat?.icon ?? ''} ${cat?.name ?? e.key} ${percent.toStringAsFixed(0)}%',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        );
+      }).toList(),
+    );
   }
 
   void _showAddTransactionDialog(

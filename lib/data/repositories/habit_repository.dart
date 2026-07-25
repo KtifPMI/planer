@@ -26,8 +26,7 @@ class HabitRepository {
 
   static String generateId() => _uuid.v4();
 
-  // Seed default habits
-  Future<void> seedDefaults() async {
+  void seedDefaults() {
     if (_box.isNotEmpty) return;
 
     final defaults = [
@@ -43,7 +42,7 @@ class HabitRepository {
     ];
 
     for (final h in defaults) {
-      await _box.put(h.id, h);
+      _box.put(h.id, h);
     }
   }
 
