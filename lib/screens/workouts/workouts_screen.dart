@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:go_router/go_router.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
@@ -721,7 +719,7 @@ class _TemplateEditSheetState extends ConsumerState<_TemplateEditSheet> {
               value: _dayOfWeek,
               decoration: InputDecoration(labelText: l10n.dayOfWeek),
               items: [
-                DropdownMenuItem(value: 0, child: Text('—')),
+                const DropdownMenuItem(value: 0, child: Text('—')),
                 ...List.generate(7, (i) => DropdownMenuItem(
                   value: i + 1,
                   child: Text(l10n.dayNameFull(i + 1)),

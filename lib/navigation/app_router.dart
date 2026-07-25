@@ -269,7 +269,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'v1.1.0',
+                'v1.1.1',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.4),
                 ),
