@@ -135,6 +135,7 @@ class AppLocalizations {
       'download': 'Скачать',
       'changelog': 'Изменения',
       'checking': 'Проверка...',
+      'networkError': 'Нет подключения к интернету',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -259,6 +260,7 @@ class AppLocalizations {
       'download': 'Download',
       'changelog': 'Changelog',
       'checking': 'Checking...',
+      'networkError': 'No internet connection',
     },
   };
 
@@ -374,6 +376,7 @@ class AppLocalizations {
   String get download => _t('download');
   String get changelog => _t('changelog');
   String get checking => _t('checking');
+  String get networkError => _t('networkError');
 
   String monthName(int month) {
     const months = [

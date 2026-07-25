@@ -29,10 +29,20 @@ class UpdateService {
       'https://api.github.com/repos/$_owner/$_repo/releases/latest',
     );
 
-    final response = await http.get(
-      url,
-      headers: {'Accept': 'application/vnd.github.v3+json'},
-    );
+    http.Response response;
+    try {
+      response = await http.get(
+        url,
+        headers: {'Accept': 'application/vnd.github.v3+json'},
+      ).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      return UpdateInfo(
+        latestVersion: currentVersion,
+        downloadUrl: '',
+        releaseNotes: '',
+        hasUpdate: false,
+      );
+    }
 
     if (response.statusCode != 200) {
       return UpdateInfo(
