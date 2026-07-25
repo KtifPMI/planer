@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/localization/app_localizations.dart';
 import '../providers/theme_provider.dart';
@@ -85,8 +86,17 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
+  String _appVersion = '';
 
   static const _routes = ['/', '/habits', '/finance', '/workouts', '/planner'];
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _appVersion = info.version);
+    });
+  }
 
   void _onTap(int index) {
     setState(() => _currentIndex = index);
@@ -249,7 +259,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'v1.1.4',
+                'v$_appVersion',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.4),
                 ),
