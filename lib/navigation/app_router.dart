@@ -213,29 +213,9 @@ class _MainShellState extends ConsumerState<MainShell> {
             ListTile(
               leading: const Icon(Icons.system_update),
               title: Text(l10n.checkUpdate),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.checking)),
-                );
-                try {
-                  final info = await UpdateService.checkForUpdate();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  if (info.hasUpdate) {
-                    _showUpdateDialog(context, info, l10n);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${l10n.noUpdate} (${info.currentVersion})')),
-                    );
-                  }
-                } catch (_) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.networkError)),
-                  );
-                }
+                UpdateService.checkAndShow(context);
               },
             ),
             const Divider(),
@@ -277,43 +257,6 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showUpdateDialog(BuildContext context, UpdateInfo info, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.updateAvailable),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('${l10n.currentVersion}: 1.0.0'),
-              const Gap(4),
-              Text('${l10n.newVersion}: ${info.latestVersion}'),
-              if (info.releaseNotes.isNotEmpty) ...[
-                const Gap(12),
-                Text(l10n.changelog, style: const TextStyle(fontWeight: FontWeight.w600)),
-                const Gap(4),
-                Text(info.releaseNotes),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          if (info.downloadUrl.isNotEmpty)
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                UpdateService.openDownload(info.downloadUrl);
-              },
-              child: Text(l10n.download),
-            ),
-        ],
       ),
     );
   }
