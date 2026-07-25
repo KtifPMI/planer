@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/widgets/common_widgets.dart';
 import '../../data/models/finance.dart';
 import '../../providers/finance_providers.dart';
 import '../../data/repositories/finance_repository.dart';
-import '../../core/utils/date_utils.dart';
 
 class FinanceScreen extends ConsumerWidget {
   const FinanceScreen({super.key});
@@ -185,10 +182,6 @@ class FinanceScreen extends ConsumerWidget {
     final total = categories.values.fold(0.0, (s, v) => s + v);
     int i = 0;
     return categories.entries.map((e) {
-      final cat = allCategories.firstWhere(
-        (c) => c.id == e.key,
-        orElse: () => Category(id: e.key, name: e.key, type: TransactionType.expense),
-      );
       final percent = total > 0 ? (e.value / total * 100) : 0.0;
       return PieChartSectionData(
         value: e.value,

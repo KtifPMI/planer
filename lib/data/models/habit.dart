@@ -49,5 +49,6 @@ class HabitEntry extends HiveObject {
     this.completed = true,
   });
 
+  @override
   String get key => '${habitId}_${date.year}_${date.month}_${date.day}';
 }

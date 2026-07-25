@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/widgets/common_widgets.dart';
 import '../../data/models/workout.dart';
 import '../../providers/workout_providers.dart';
 import '../../data/repositories/workout_repository.dart';
@@ -22,7 +21,8 @@ class WorkoutsScreen extends ConsumerWidget {
     final latest = ref.watch(latestWorkoutProvider);
     final count = ref.watch(workoutCountThisMonthProvider);
 
-    return ListView(
+    return Scaffold(
+      body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
         Text(l10n.workouts, style: theme.textTheme.headlineLarge),
@@ -128,6 +128,7 @@ class WorkoutsScreen extends ConsumerWidget {
           ),
         )),
       ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showStartWorkoutDialog(context, ref, l10n),
         child: const Icon(Icons.add),
