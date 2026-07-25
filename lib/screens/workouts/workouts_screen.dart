@@ -87,7 +87,11 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               onStart: () => _startWorkout(ref, t),
             ))
           else
-            _NoWorkoutCard(l10n: l10n, theme: theme),
+            _NoWorkoutCard(
+              l10n: l10n,
+              theme: theme,
+              onTapAdd: () => _showAddTemplateSheet(context, ref, l10n),
+            ),
 
           const Gap(16),
 
@@ -473,13 +477,31 @@ class _SetRowState extends State<_SetRow> {
             ),
           ),
           const Gap(4),
+          Checkbox(
+            value: widget.set.completed,
+            onChanged: (v) {
+              widget.set.completed = v ?? false;
+              widget.session.save();
+              widget.onSaved();
+            },
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          ),
           GestureDetector(
             onTap: () {
               widget.exercise.sets.remove(widget.set);
-              // Renumber
               for (int i = 0; i < widget.exercise.sets.length; i++) {
                 widget.exercise.sets[i].setNumber = i + 1;
               }
+              widget.session.save();
+              widget.onSaved();
+            },
+            child: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+          ),
+        ],
+      ),
+    );
+  }
               widget.session.save();
               widget.onSaved();
             },
@@ -495,33 +517,39 @@ class _SetRowState extends State<_SetRow> {
 class _NoWorkoutCard extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
+  final VoidCallback? onTapAdd;
 
-  const _NoWorkoutCard({required this.l10n, required this.theme});
+  const _NoWorkoutCard({required this.l10n, required this.theme, this.onTapAdd});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.fitness_center, size: 40, color: theme.colorScheme.onSurface.withOpacity(0.2)),
-              const Gap(8),
-              Text(
-                l10n.noWorkoutToday,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTapAdd,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.fitness_center, size: 40, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+                const Gap(8),
+                Text(
+                  l10n.noWorkoutToday,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
                 ),
-              ),
-              const Gap(4),
-              Text(
-                l10n.addTemplate,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.primary,
+                const Gap(4),
+                Text(
+                  l10n.addTemplate,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

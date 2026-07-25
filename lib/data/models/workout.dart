@@ -63,10 +63,14 @@ class SetLog extends HiveObject {
   @HiveField(2)
   int reps;
 
+  @HiveField(3)
+  bool completed;
+
   SetLog({
     required this.setNumber,
     required this.weight,
     required this.reps,
+    this.completed = false,
   });
 }
 
