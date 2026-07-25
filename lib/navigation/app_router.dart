@@ -226,7 +226,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     _showUpdateDialog(context, info, l10n);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.noUpdate)),
+                      SnackBar(content: Text('${l10n.noUpdate} (${info.currentVersion})')),
                     );
                   }
                 } catch (_) {

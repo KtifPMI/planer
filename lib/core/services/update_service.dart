@@ -5,12 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UpdateInfo {
   final String latestVersion;
+  final String currentVersion;
   final String downloadUrl;
   final String releaseNotes;
   final bool hasUpdate;
 
   const UpdateInfo({
     required this.latestVersion,
+    required this.currentVersion,
     required this.downloadUrl,
     required this.releaseNotes,
     required this.hasUpdate,
@@ -29,28 +31,13 @@ class UpdateService {
       'https://api.github.com/repos/$_owner/$_repo/releases/latest',
     );
 
-    http.Response response;
-    try {
-      response = await http.get(
-        url,
-        headers: {'Accept': 'application/vnd.github.v3+json'},
-      ).timeout(const Duration(seconds: 10));
-    } catch (_) {
-      return UpdateInfo(
-        latestVersion: currentVersion,
-        downloadUrl: '',
-        releaseNotes: '',
-        hasUpdate: false,
-      );
-    }
+    final response = await http.get(
+      url,
+      headers: {'Accept': 'application/vnd.github.v3+json'},
+    ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      return UpdateInfo(
-        latestVersion: currentVersion,
-        downloadUrl: '',
-        releaseNotes: '',
-        hasUpdate: false,
-      );
+      throw Exception('HTTP ${response.statusCode}');
     }
 
     final data = json.decode(response.body);
@@ -72,6 +59,7 @@ class UpdateService {
 
     return UpdateInfo(
       latestVersion: latestVersion,
+      currentVersion: currentVersion,
       downloadUrl: downloadUrl,
       releaseNotes: body,
       hasUpdate: hasUpdate,
