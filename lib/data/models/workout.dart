@@ -19,12 +19,16 @@ class WorkoutSession extends HiveObject {
   @HiveField(4)
   Duration? duration;
 
+  @HiveField(5)
+  String? templateId;
+
   WorkoutSession({
     required this.id,
     required this.date,
     this.name,
     this.exercises = const [],
     this.duration,
+    this.templateId,
   });
 }
 
@@ -103,9 +107,39 @@ class WorkoutTemplate extends HiveObject {
   @HiveField(2)
   List<String> exerciseIds;
 
+  @HiveField(3)
+  int dayOfWeek;
+
+  @HiveField(4)
+  List<TemplateExercise> exercises;
+
   WorkoutTemplate({
     required this.id,
     required this.name,
     this.exerciseIds = const [],
+    this.dayOfWeek = 0,
+    this.exercises = const [],
+  });
+}
+
+@HiveType(typeId: 16)
+class TemplateExercise extends HiveObject {
+  @HiveField(0)
+  String name;
+
+  @HiveField(1)
+  int targetSets;
+
+  @HiveField(2)
+  int targetReps;
+
+  @HiveField(3)
+  double targetWeight;
+
+  TemplateExercise({
+    required this.name,
+    this.targetSets = 3,
+    this.targetReps = 10,
+    this.targetWeight = 0,
   });
 }

@@ -80,10 +80,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
       color: theme.colorScheme.surface,
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _prevDay,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_left), onPressed: _prevDay),
           Expanded(
             child: GestureDetector(
               onTap: _isToday ? null : _goToToday,
@@ -91,9 +88,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
                 children: [
                   Text(
                     '${_selectedDate.day} $monthName',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),
                   Text(
@@ -108,10 +103,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _nextDay,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_right), onPressed: _nextDay),
         ],
       ),
     );
@@ -145,8 +137,12 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _HabitEditSheet(existing: existing, l10n: l10n),
-    ).then((_) => setState(() {}));
+      builder: (_) => _HabitEditSheet(
+        existing: existing,
+        l10n: l10n,
+        onSave: () => ref.invalidate(habitsListProvider),
+      ),
+    );
   }
 }
 
@@ -193,7 +189,7 @@ class _HabitCard extends StatelessWidget {
                       Text(habit.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
                       const Gap(2),
                       Text(
-                        '$monthlyTotal / ${habit.monthlyTarget.toInt()} ${habit.unit} — ${l10n.month.toLowerCase()}',
+                        '$monthlyTotal / ${habit.monthlyTarget.toInt()} ${habit.unit}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.5),
                         ),
@@ -201,15 +197,24 @@ class _HabitCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!habit.isBoolean)
+                if (!habit.isBoolean) ...[
+                  _QuickAddButton(
+                    icon: Icons.add,
+                    onTap: () {
+                      final current = repo.getValueForDate(habit.id, selectedDate);
+                      repo.setEntry(habit.id, selectedDate, current + 1);
+                      onRefresh();
+                    },
+                  ),
+                  const Gap(6),
                   _InlineValueInput(
                     habit: habit,
                     date: selectedDate,
                     initialValue: todayValue,
                     repo: repo,
                     onSaved: onRefresh,
-                  )
-                else
+                  ),
+                ] else
                   _BooleanToggle(
                     habit: habit,
                     date: selectedDate,
@@ -268,10 +273,31 @@ class _HabitCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _HabitDetailSheet(
-        habit: habit,
-        repo: repo,
-        l10n: l10n,
+      builder: (_) => _HabitDetailSheet(habit: habit, repo: repo, l10n: l10n),
+    );
+  }
+}
+
+// --- Quick +1 button ---
+class _QuickAddButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QuickAddButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        ),
+        child: const Icon(Icons.add, size: 18, color: AppColors.primary),
       ),
     );
   }
@@ -351,10 +377,6 @@ class _InlineValueInputState extends State<_InlineValueInput> {
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
-          suffixText: widget.habit.unit,
-          suffixStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-          ),
         ),
         onSubmitted: (_) => _save(),
         onTapOutside: (_) => _save(),
@@ -415,11 +437,7 @@ class _HabitDetailSheet extends StatefulWidget {
   final HabitRepository repo;
   final AppLocalizations l10n;
 
-  const _HabitDetailSheet({
-    required this.habit,
-    required this.repo,
-    required this.l10n,
-  });
+  const _HabitDetailSheet({required this.habit, required this.repo, required this.l10n});
 
   @override
   State<_HabitDetailSheet> createState() => _HabitDetailSheetState();
@@ -460,12 +478,8 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.dividerColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: theme.dividerColor, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const Gap(16),
@@ -588,7 +602,11 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _HabitEditSheet(existing: habit, l10n: widget.l10n),
+      builder: (_) => _HabitEditSheet(
+        existing: habit,
+        l10n: widget.l10n,
+        onSave: () {},
+      ),
     );
   }
 }
@@ -644,12 +662,11 @@ class _MonthCalendar extends StatelessWidget {
     final theme = Theme.of(context);
     final firstDay = DateTime(month.year, month.month, 1);
     final lastDay = DateTime(month.year, month.month + 1, 0);
-    final startWeekday = firstDay.weekday % 7; // 0=Sun
+    final startWeekday = firstDay.weekday % 7;
     final daysInMonth = lastDay.day;
     final today = DateTime.now();
 
     final cells = <Widget>[];
-    // Weekday labels
     for (final d in ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']) {
       cells.add(Center(
         child: Text(d, style: theme.textTheme.labelSmall?.copyWith(
@@ -657,11 +674,9 @@ class _MonthCalendar extends StatelessWidget {
         )),
       ));
     }
-    // Empty cells before first day
     for (int i = 0; i < startWeekday; i++) {
       cells.add(const SizedBox());
     }
-    // Day cells
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(month.year, month.month, day);
       final value = repo.getValueForDate(habit.id, date);
@@ -743,8 +758,9 @@ class _MonthCalendar extends StatelessWidget {
 class _HabitEditSheet extends StatefulWidget {
   final Habit? existing;
   final AppLocalizations l10n;
+  final VoidCallback onSave;
 
-  const _HabitEditSheet({this.existing, required this.l10n});
+  const _HabitEditSheet({this.existing, required this.l10n, required this.onSave});
 
   @override
   State<_HabitEditSheet> createState() => _HabitEditSheetState();
@@ -793,10 +809,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isEdit ? widget.l10n.edit : widget.l10n.addHabit,
-              style: theme.textTheme.titleLarge,
-            ),
+            Text(isEdit ? widget.l10n.edit : widget.l10n.addHabit, style: theme.textTheme.titleLarge),
             const Gap(16),
             TextField(
               controller: _nameCtrl,
@@ -815,9 +828,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _icon == icon
-                        ? AppColors.primary.withOpacity(0.2)
-                        : theme.colorScheme.surface,
+                    color: _icon == icon ? AppColors.primary.withOpacity(0.2) : theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: _icon == icon ? AppColors.primary : theme.dividerColor,
@@ -880,6 +891,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
     final target = double.tryParse(_targetCtrl.text) ?? 20;
     final unit = _unitCtrl.text.trim().isEmpty ? widget.l10n.unitDays : _unitCtrl.text.trim();
 
+    final repo = HabitRepository();
     if (widget.existing != null) {
       final updated = widget.existing!
         ..name = _nameCtrl.text.trim()
@@ -897,9 +909,10 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
         unit: unit,
         isBoolean: _isBoolean,
       );
-      final repo = HabitRepository();
       await repo.add(habit);
     }
+
+    widget.onSave();
 
     if (mounted) {
       Navigator.pop(context);

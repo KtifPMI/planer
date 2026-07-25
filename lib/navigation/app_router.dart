@@ -13,6 +13,7 @@ import '../screens/finance/savings_screen.dart';
 import '../screens/finance/debts_screen.dart';
 import '../screens/workouts/workouts_screen.dart';
 import '../screens/planner/planner_screen.dart';
+import '../core/services/update_service.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -131,6 +132,10 @@ class _MainShellState extends ConsumerState<MainShell> {
         currentIndex: _currentIndex,
         onTap: _onTap,
         type: BottomNavigationBarType.fixed,
+        iconSize: 22,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.home_outlined),
@@ -206,6 +211,35 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(Icons.system_update),
+              title: Text(l10n.checkUpdate),
+              onTap: () async {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.checking)),
+                );
+                try {
+                  final info = await UpdateService.checkForUpdate();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  if (info.hasUpdate) {
+                    _showUpdateDialog(context, info, l10n);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.noUpdate)),
+                    );
+                  }
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$e')),
+                  );
+                }
+              },
+            ),
+            const Divider(),
+            ListTile(
               leading: const Icon(Icons.language),
               title: Text(l10n.language),
               trailing: Text(
@@ -235,7 +269,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'v1.0.0',
+                'v1.1.0',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.4),
                 ),
@@ -243,6 +277,43 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context, UpdateInfo info, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.updateAvailable),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${l10n.currentVersion}: 1.0.0'),
+              const Gap(4),
+              Text('${l10n.newVersion}: ${info.latestVersion}'),
+              if (info.releaseNotes.isNotEmpty) ...[
+                const Gap(12),
+                Text(l10n.changelog, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const Gap(4),
+                Text(info.releaseNotes),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          if (info.downloadUrl.isNotEmpty)
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                UpdateService.openDownload(info.downloadUrl);
+              },
+              child: Text(l10n.download),
+            ),
+        ],
       ),
     );
   }

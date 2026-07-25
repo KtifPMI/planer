@@ -18,13 +18,14 @@ class WorkoutSessionAdapter extends TypeAdapter<WorkoutSession> {
       name: fields[2] as String?,
       exercises: (fields[3] as List).cast<ExerciseLog>(),
       duration: fields[4] as Duration?,
+      templateId: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, WorkoutSession obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -34,7 +35,9 @@ class WorkoutSessionAdapter extends TypeAdapter<WorkoutSession> {
       ..writeByte(3)
       ..write(obj.exercises)
       ..writeByte(4)
-      ..write(obj.duration);
+      ..write(obj.duration)
+      ..writeByte(5)
+      ..write(obj.templateId);
   }
 
   @override
@@ -185,19 +188,25 @@ class WorkoutTemplateAdapter extends TypeAdapter<WorkoutTemplate> {
       id: fields[0] as String,
       name: fields[1] as String,
       exerciseIds: (fields[2] as List).cast<String>(),
+      dayOfWeek: fields[3] as int,
+      exercises: (fields[4] as List).cast<TemplateExercise>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, WorkoutTemplate obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.exerciseIds);
+      ..write(obj.exerciseIds)
+      ..writeByte(3)
+      ..write(obj.dayOfWeek)
+      ..writeByte(4)
+      ..write(obj.exercises);
   }
 
   @override
@@ -207,6 +216,49 @@ class WorkoutTemplateAdapter extends TypeAdapter<WorkoutTemplate> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is WorkoutTemplateAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class TemplateExerciseAdapter extends TypeAdapter<TemplateExercise> {
+  @override
+  final int typeId = 16;
+
+  @override
+  TemplateExercise read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return TemplateExercise(
+      name: fields[0] as String,
+      targetSets: fields[1] as int,
+      targetReps: fields[2] as int,
+      targetWeight: fields[3] as double,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, TemplateExercise obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.name)
+      ..writeByte(1)
+      ..write(obj.targetSets)
+      ..writeByte(2)
+      ..write(obj.targetReps)
+      ..writeByte(3)
+      ..write(obj.targetWeight);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TemplateExerciseAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -109,6 +109,32 @@ class AppLocalizations {
       'done': 'Готово',
       'addValue': 'Введите значение',
       'booleanHabit': 'Да / Нет',
+      'workoutTemplates': 'Шаблоны тренировок',
+      'addTemplate': 'Добавить шаблон',
+      'editTemplate': 'Редактировать шаблон',
+      'templateName': 'Название шаблона',
+      'exercises': 'Упражнения',
+      'addExercise': 'Добавить упражнение',
+      'exerciseName': 'Название упражнения',
+      'setsCount': 'Подходы',
+      'repsCount': 'Повторения',
+      'targetWeight': 'Вес (кг)',
+      'dayOfWeek': 'День недели',
+      'startWorkout': 'Начать тренировку',
+      'todayWorkout': 'Тренировка дня',
+      'noWorkoutToday': 'Нет тренировки на сегодня',
+      'workoutSettings': 'Настройки тренировок',
+      'activeWorkout': 'Активная тренировка',
+      'finishWorkout': 'Завершить',
+      'logSet': 'Записать подход',
+      'checkUpdate': 'Проверить обновления',
+      'updateAvailable': 'Доступно обновление',
+      'noUpdate': 'У вас последняя версия',
+      'currentVersion': 'Текущая версия',
+      'newVersion': 'Новая версия',
+      'download': 'Скачать',
+      'changelog': 'Изменения',
+      'checking': 'Проверка...',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -207,6 +233,32 @@ class AppLocalizations {
       'done': 'Done',
       'addValue': 'Enter value',
       'booleanHabit': 'Yes / No',
+      'workoutTemplates': 'Workout Templates',
+      'addTemplate': 'Add template',
+      'editTemplate': 'Edit template',
+      'templateName': 'Template name',
+      'exercises': 'Exercises',
+      'addExercise': 'Add exercise',
+      'exerciseName': 'Exercise name',
+      'setsCount': 'Sets',
+      'repsCount': 'Reps',
+      'targetWeight': 'Weight (kg)',
+      'dayOfWeek': 'Day of week',
+      'startWorkout': 'Start workout',
+      'todayWorkout': 'Today\'s workout',
+      'noWorkoutToday': 'No workout today',
+      'workoutSettings': 'Workout settings',
+      'activeWorkout': 'Active workout',
+      'finishWorkout': 'Finish',
+      'logSet': 'Log set',
+      'checkUpdate': 'Check for updates',
+      'updateAvailable': 'Update available',
+      'noUpdate': 'You have the latest version',
+      'currentVersion': 'Current version',
+      'newVersion': 'New version',
+      'download': 'Download',
+      'changelog': 'Changelog',
+      'checking': 'Checking...',
     },
   };
 
@@ -296,6 +348,32 @@ class AppLocalizations {
   String get done => _t('done');
   String get addValue => _t('addValue');
   String get booleanHabit => _t('booleanHabit');
+  String get workoutTemplates => _t('workoutTemplates');
+  String get addTemplate => _t('addTemplate');
+  String get editTemplate => _t('editTemplate');
+  String get templateName => _t('templateName');
+  String get exercises => _t('exercises');
+  String get addExercise => _t('addExercise');
+  String get exerciseName => _t('exerciseName');
+  String get setsCount => _t('setsCount');
+  String get repsCount => _t('repsCount');
+  String get targetWeight => _t('targetWeight');
+  String get dayOfWeek => _t('dayOfWeek');
+  String get startWorkout => _t('startWorkout');
+  String get todayWorkout => _t('todayWorkout');
+  String get noWorkoutToday => _t('noWorkoutToday');
+  String get workoutSettings => _t('workoutSettings');
+  String get activeWorkout => _t('activeWorkout');
+  String get finishWorkout => _t('finishWorkout');
+  String get logSet => _t('logSet');
+  String get checkUpdate => _t('checkUpdate');
+  String get updateAvailable => _t('updateAvailable');
+  String get noUpdate => _t('noUpdate');
+  String get currentVersion => _t('currentVersion');
+  String get newVersion => _t('newVersion');
+  String get download => _t('download');
+  String get changelog => _t('changelog');
+  String get checking => _t('checking');
 
   String monthName(int month) {
     const months = [
@@ -308,6 +386,16 @@ class AppLocalizations {
   String dayName(int weekday) {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     return _t(days[weekday - 1]);
+  }
+
+  String dayNameFull(int weekday) {
+    const days = [
+      'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье',
+    ];
+    const daysEn = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+    ];
+    return locale.languageCode == 'ru' ? days[weekday - 1] : daysEn[weekday - 1];
   }
 }
 

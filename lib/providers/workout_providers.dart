@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models/workout.dart';
 import '../data/repositories/workout_repository.dart';
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
@@ -34,4 +35,17 @@ final weightProgressionProvider =
     Provider.family<List<double>, String>((ref, exerciseName) {
   return ref.watch(workoutRepositoryProvider)
       .getWeightProgression(exerciseName);
+});
+
+final allWorkoutTemplatesProvider = Provider<List<WorkoutTemplate>>((ref) {
+  return ref.watch(workoutRepositoryProvider).getAllWorkoutTemplates();
+});
+
+final todayWorkoutTemplatesProvider = Provider<List<WorkoutTemplate>>((ref) {
+  final today = DateTime.now().weekday;
+  return ref.watch(workoutRepositoryProvider).getTemplatesForDay(today);
+});
+
+final todaySessionProvider = Provider<WorkoutSession?>((ref) {
+  return ref.watch(workoutRepositoryProvider).getSessionForDate(DateTime.now());
 });

@@ -52,6 +52,7 @@ class StorageService {
     if (!Hive.isAdapterRegistered(13)) Hive.registerAdapter(WeekGoalAdapter());
     if (!Hive.isAdapterRegistered(14)) Hive.registerAdapter(DayPlanAdapter());
     if (!Hive.isAdapterRegistered(15)) Hive.registerAdapter(PlannerTaskAdapter());
+    if (!Hive.isAdapterRegistered(16)) Hive.registerAdapter(TemplateExerciseAdapter());
   }
 
   static Future<void> _seedDefaultCategories() async {

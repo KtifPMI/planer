@@ -8,7 +8,9 @@ class WorkoutRepository {
   final _workoutTemplates = StorageService.workoutTemplatesBox;
   static const _uuid = Uuid();
 
-  // Sessions
+  static String generateId() => _uuid.v4();
+
+  // --- Sessions ---
   List<WorkoutSession> getAllSessions() =>
       _sessions.values.toList()..sort((a, b) => b.date.compareTo(a.date));
 
@@ -23,8 +25,16 @@ class WorkoutRepository {
 
   WorkoutSession? getLatestSession() {
     if (_sessions.isEmpty) return null;
-    final sorted = getAllSessions();
-    return sorted.isNotEmpty ? sorted.first : null;
+    return getAllSessions().first;
+  }
+
+  WorkoutSession? getSessionForDate(DateTime date) {
+    for (final s in _sessions.values) {
+      if (s.date.year == date.year && s.date.month == date.month && s.date.day == date.day) {
+        return s;
+      }
+    }
+    return null;
   }
 
   Future<void> addSession(WorkoutSession session) =>
@@ -35,9 +45,35 @@ class WorkoutRepository {
 
   Future<void> deleteSession(String id) => _sessions.delete(id);
 
-  static String generateId() => _uuid.v4();
+  // --- Workout Templates ---
+  List<WorkoutTemplate> getAllWorkoutTemplates() =>
+      _workoutTemplates.values.toList();
 
-  // Exercise history
+  WorkoutTemplate? getWorkoutTemplate(String id) => _workoutTemplates.get(id);
+
+  List<WorkoutTemplate> getTemplatesForDay(int dayOfWeek) {
+    return _workoutTemplates.values
+        .where((t) => t.dayOfWeek == dayOfWeek)
+        .toList();
+  }
+
+  Future<void> addWorkoutTemplate(WorkoutTemplate t) =>
+      _workoutTemplates.put(t.id, t);
+
+  Future<void> updateWorkoutTemplate(WorkoutTemplate t) =>
+      _workoutTemplates.put(t.id, t);
+
+  Future<void> deleteWorkoutTemplate(String id) =>
+      _workoutTemplates.delete(id);
+
+  // --- Exercise Templates ---
+  List<ExerciseTemplate> getAllTemplates() => _templates.values.toList();
+
+  Future<void> addTemplate(ExerciseTemplate t) => _templates.put(t.id, t);
+
+  Future<void> deleteTemplate(String id) => _templates.delete(id);
+
+  // --- Exercise History ---
   List<ExerciseLog> getExerciseHistory(String exerciseName) {
     final history = <ExerciseLog>[];
     for (final session in _sessions.values) {
@@ -54,23 +90,7 @@ class WorkoutRepository {
     return getExerciseHistory(exerciseName).map((e) => e.maxWeight).toList();
   }
 
-  // Templates
-  List<ExerciseTemplate> getAllTemplates() => _templates.values.toList();
-
-  Future<void> addTemplate(ExerciseTemplate t) => _templates.put(t.id, t);
-
-  Future<void> deleteTemplate(String id) => _templates.delete(id);
-
-  List<WorkoutTemplate> getAllWorkoutTemplates() =>
-      _workoutTemplates.values.toList();
-
-  Future<void> addWorkoutTemplate(WorkoutTemplate t) =>
-      _workoutTemplates.put(t.id, t);
-
-  Future<void> deleteWorkoutTemplate(String id) =>
-      _workoutTemplates.delete(id);
-
-  // Stats
+  // --- Stats ---
   int getSessionsThisMonth(int year, int month) =>
       getSessionsForMonth(year, month).length;
 
