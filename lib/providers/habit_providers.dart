@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/habit.dart';
-import '../repositories/habit_repository.dart';
+import '../data/models/habit.dart';
+import '../data/repositories/habit_repository.dart';
 
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {
   return HabitRepository();

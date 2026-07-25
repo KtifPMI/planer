@@ -39,7 +39,6 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final habits = ref.watch(habitsListProvider);
-    final now = DateTime.now();
 
     return Scaffold(
       body: Column(
@@ -805,7 +804,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
               autofocus: !isEdit,
             ),
             const Gap(12),
-            Text(widget.l10n.name + ':', style: theme.textTheme.labelMedium),
+            Text('${widget.l10n.name}:', style: theme.textTheme.labelMedium),
             const Gap(6),
             Wrap(
               spacing: 6,

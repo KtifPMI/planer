@@ -10,7 +10,6 @@ import '../../providers/habit_providers.dart';
 import '../../providers/finance_providers.dart';
 import '../../providers/workout_providers.dart';
 import '../../providers/planner_providers.dart';
-import '../../data/repositories/habit_repository.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -19,7 +18,6 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final habits = ref.watch(habitsListProvider);
     final todayStats = ref.watch(todayStatsProvider);
     final monthIncome = ref.watch(monthIncomeProvider);
     final monthExpense = ref.watch(monthExpenseProvider);
