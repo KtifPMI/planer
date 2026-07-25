@@ -14,20 +14,24 @@ class Habit extends HiveObject {
   String icon;
 
   @HiveField(3)
-  int targetPerMonth;
+  double monthlyTarget;
 
   @HiveField(4)
-  List<int> daysOfWeek;
+  String unit;
 
   @HiveField(5)
+  bool isBoolean;
+
+  @HiveField(6)
   DateTime createdAt;
 
   Habit({
     required this.id,
     required this.name,
     this.icon = '✅',
-    this.targetPerMonth = 20,
-    this.daysOfWeek = const [1, 2, 3, 4, 5, 6, 7],
+    this.monthlyTarget = 30,
+    this.unit = 'раз',
+    this.isBoolean = false,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 }
@@ -41,14 +45,13 @@ class HabitEntry extends HiveObject {
   DateTime date;
 
   @HiveField(2)
-  bool completed;
+  double value;
 
   HabitEntry({
     required this.habitId,
     required this.date,
-    this.completed = true,
+    this.value = 1,
   });
 
-  @override
   String get key => '${habitId}_${date.year}_${date.month}_${date.day}';
 }

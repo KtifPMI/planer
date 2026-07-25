@@ -85,7 +85,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
-  static const _routes = ['/', '/habits', '/finance', '/workouts'];
+  static const _routes = ['/', '/habits', '/finance', '/workouts', '/planner'];
 
   void _onTap(int index) {
     setState(() => _currentIndex = index);
@@ -130,6 +130,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTap,
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.home_outlined),
@@ -150,6 +151,11 @@ class _MainShellState extends ConsumerState<MainShell> {
             icon: const Icon(Icons.fitness_center_outlined),
             activeIcon: const Icon(Icons.fitness_center),
             label: l10n.workouts,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.calendar_view_week_outlined),
+            activeIcon: const Icon(Icons.calendar_view_week),
+            label: l10n.planner,
           ),
         ],
       ),
@@ -182,14 +188,6 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.calendar_view_week),
-              title: Text(l10n.planner),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/planner');
-              },
-            ),
             ListTile(
               leading: const Icon(Icons.savings),
               title: Text(l10n.savings),

@@ -96,6 +96,19 @@ class AppLocalizations {
       'totalTasks': 'Всего задач',
       'productiveDay': 'Продуктивный день',
       'about': 'О приложении',
+      'unit': 'Ед. изм.',
+      'unitTimes': 'раз',
+      'unitPages': 'страниц',
+      'unitMinutes': 'минут',
+      'unitKm': 'км',
+      'unitDays': 'дней',
+      'todayValue': 'Сегодня',
+      'monthlyProgress': 'Прогресс за месяц',
+      'detail': 'Подробнее',
+      'calendar': 'Календарь',
+      'done': 'Готово',
+      'addValue': 'Введите значение',
+      'booleanHabit': 'Да / Нет',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -181,6 +194,19 @@ class AppLocalizations {
       'totalTasks': 'Total tasks',
       'productiveDay': 'Productive day',
       'about': 'About',
+      'unit': 'Unit',
+      'unitTimes': 'times',
+      'unitPages': 'pages',
+      'unitMinutes': 'minutes',
+      'unitKm': 'km',
+      'unitDays': 'days',
+      'todayValue': 'Today',
+      'monthlyProgress': 'Monthly progress',
+      'detail': 'Details',
+      'calendar': 'Calendar',
+      'done': 'Done',
+      'addValue': 'Enter value',
+      'booleanHabit': 'Yes / No',
     },
   };
 
@@ -257,6 +283,19 @@ class AppLocalizations {
   String get totalTasks => _t('totalTasks');
   String get productiveDay => _t('productiveDay');
   String get about => _t('about');
+  String get unit => _t('unit');
+  String get unitTimes => _t('unitTimes');
+  String get unitPages => _t('unitPages');
+  String get unitMinutes => _t('unitMinutes');
+  String get unitKm => _t('unitKm');
+  String get unitDays => _t('unitDays');
+  String get todayValue => _t('todayValue');
+  String get monthlyProgress => _t('monthlyProgress');
+  String get detail => _t('detail');
+  String get calendar => _t('calendar');
+  String get done => _t('done');
+  String get addValue => _t('addValue');
+  String get booleanHabit => _t('booleanHabit');
 
   String monthName(int month) {
     const months = [

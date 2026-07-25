@@ -10,6 +10,7 @@ import '../../providers/habit_providers.dart';
 import '../../providers/finance_providers.dart';
 import '../../providers/workout_providers.dart';
 import '../../providers/planner_providers.dart';
+import '../../data/repositories/habit_repository.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -18,14 +19,15 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final habits = ref.watch(habitsWithProgressProvider);
+    final habits = ref.watch(habitsListProvider);
+    final todayStats = ref.watch(todayStatsProvider);
     final monthIncome = ref.watch(monthIncomeProvider);
     final monthExpense = ref.watch(monthExpenseProvider);
     final workoutCount = ref.watch(workoutCountThisMonthProvider);
     final analytics = ref.watch(weekAnalyticsProvider);
 
-    final todayHabitsDone = habits.where((h) => h['completedToday'] == true).length;
-    final todayHabitsTotal = habits.length;
+    final todayHabitsDone = todayStats['done'] as int;
+    final todayHabitsTotal = todayStats['total'] as int;
     final habitProgress = todayHabitsTotal > 0
         ? todayHabitsDone / todayHabitsTotal
         : 0.0;

@@ -16,16 +16,17 @@ class HabitAdapter extends TypeAdapter<Habit> {
       id: fields[0] as String,
       name: fields[1] as String,
       icon: fields[2] as String,
-      targetPerMonth: fields[3] as int,
-      daysOfWeek: (fields[4] as List).cast<int>(),
-      createdAt: fields[5] as DateTime,
+      monthlyTarget: fields[3] as double,
+      unit: fields[4] as String,
+      isBoolean: fields[5] as bool,
+      createdAt: fields[6] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -33,10 +34,12 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..writeByte(2)
       ..write(obj.icon)
       ..writeByte(3)
-      ..write(obj.targetPerMonth)
+      ..write(obj.monthlyTarget)
       ..writeByte(4)
-      ..write(obj.daysOfWeek)
+      ..write(obj.unit)
       ..writeByte(5)
+      ..write(obj.isBoolean)
+      ..writeByte(6)
       ..write(obj.createdAt);
   }
 
@@ -64,7 +67,7 @@ class HabitEntryAdapter extends TypeAdapter<HabitEntry> {
     return HabitEntry(
       habitId: fields[0] as String,
       date: fields[1] as DateTime,
-      completed: fields[2] as bool,
+      value: fields[2] as double,
     );
   }
 
@@ -77,7 +80,7 @@ class HabitEntryAdapter extends TypeAdapter<HabitEntry> {
       ..writeByte(1)
       ..write(obj.date)
       ..writeByte(2)
-      ..write(obj.completed);
+      ..write(obj.value);
   }
 
   @override
