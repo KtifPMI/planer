@@ -43,8 +43,6 @@ class UpdateService {
 
       data ??= await _fetchViaPage();
 
-      if (data == null) return null;
-
       final tag = (data['tag_name'] as String?)?.replaceFirst('v', '').split('+').first ?? '';
       if (tag.isEmpty) return null;
 
