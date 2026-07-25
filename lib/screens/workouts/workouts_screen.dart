@@ -78,7 +78,12 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
 
           // Today's workout or session
           if (todaySession != null)
-            _ActiveWorkoutCard(session: todaySession, l10n: l10n, theme: theme)
+            _ActiveWorkoutCard(
+              session: todaySession,
+              l10n: l10n,
+              theme: theme,
+              onRefresh: () => setState(() {}),
+            )
           else if (todayTemplates.isNotEmpty)
             ...todayTemplates.map((t) => _TemplateCard(
               template: t,
@@ -266,19 +271,21 @@ class _TemplateCard extends StatelessWidget {
 }
 
 // --- Active workout card ---
-class _ActiveWorkoutCard extends ConsumerWidget {
+class _ActiveWorkoutCard extends StatelessWidget {
   final WorkoutSession session;
   final AppLocalizations l10n;
   final ThemeData theme;
+  final VoidCallback onRefresh;
 
   const _ActiveWorkoutCard({
     required this.session,
     required this.l10n,
     required this.theme,
+    required this.onRefresh,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       color: AppColors.workoutPrimary.withOpacity(0.05),
@@ -305,7 +312,7 @@ class _ActiveWorkoutCard extends ConsumerWidget {
               session: session,
               l10n: l10n,
               theme: theme,
-              onRefresh: () => ref.invalidate(todaySessionProvider),
+              onRefresh: onRefresh,
             )),
           ],
         ),
@@ -412,6 +419,7 @@ class _SetRowState extends State<_SetRow> {
     widget.set.weight = double.tryParse(_weightCtrl.text) ?? 0;
     widget.set.reps = int.tryParse(_repsCtrl.text) ?? 0;
     widget.session.save();
+    widget.onSaved();
   }
 
   @override
