@@ -49,3 +49,7 @@ app.*.map.json
 # Environment
 .env
 .env.local
+
+# Signing
+*.keystore
+*.jks

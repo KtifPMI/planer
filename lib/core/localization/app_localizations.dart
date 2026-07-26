@@ -135,6 +135,15 @@ class AppLocalizations {
       'download': 'Скачать',
       'changelog': 'Изменения',
       'checking': 'Проверка...',
+      'nutrition': 'Питание',
+      'breakfast': 'Завтрак',
+      'lunch': 'Обед',
+      'dinner': 'Ужин',
+      'snack': 'Перекус',
+      'addFood': 'Добавить продукт',
+      'searchProduct': 'Поиск продукта...',
+      'foodName': 'Название продукта',
+      'yesterday': 'Вчера',
       'networkError': 'Нет подключения к интернету',
     },
     'en': {
@@ -260,6 +269,15 @@ class AppLocalizations {
       'download': 'Download',
       'changelog': 'Changelog',
       'checking': 'Checking...',
+      'nutrition': 'Nutrition',
+      'breakfast': 'Breakfast',
+      'lunch': 'Lunch',
+      'dinner': 'Dinner',
+      'snack': 'Snack',
+      'addFood': 'Add food',
+      'searchProduct': 'Search product...',
+      'foodName': 'Food name',
+      'yesterday': 'Yesterday',
       'networkError': 'No internet connection',
     },
   };
@@ -376,6 +394,15 @@ class AppLocalizations {
   String get download => _t('download');
   String get changelog => _t('changelog');
   String get checking => _t('checking');
+  String get nutrition => _t('nutrition');
+  String get breakfast => _t('breakfast');
+  String get lunch => _t('lunch');
+  String get dinner => _t('dinner');
+  String get snack => _t('snack');
+  String get addFood => _t('addFood');
+  String get searchProduct => _t('searchProduct');
+  String get foodName => _t('foodName');
+  String get yesterday => _t('yesterday');
   String get networkError => _t('networkError');
 
   String monthName(int month) {

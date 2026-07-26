@@ -14,6 +14,7 @@ import '../screens/finance/savings_screen.dart';
 import '../screens/finance/debts_screen.dart';
 import '../screens/workouts/workouts_screen.dart';
 import '../screens/planner/planner_screen.dart';
+import '../screens/nutrition/nutrition_screen.dart';
 import '../core/services/update_service.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,6 +60,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/nutrition',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: NutritionScreen(),
+            ),
+          ),
+          GoRoute(
             path: '/savings',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: SavingsScreen(),
@@ -88,7 +95,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
   String _appVersion = '';
 
-  static const _routes = ['/', '/habits', '/finance', '/workouts', '/planner'];
+  static const _routes = ['/', '/habits', '/finance', '/workouts', '/planner', '/nutrition'];
 
   @override
   void initState() {
@@ -171,6 +178,11 @@ class _MainShellState extends ConsumerState<MainShell> {
             icon: const Icon(Icons.calendar_view_week_outlined),
             activeIcon: const Icon(Icons.calendar_view_week),
             label: l10n.planner,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.restaurant_outlined),
+            activeIcon: const Icon(Icons.restaurant),
+            label: l10n.nutrition,
           ),
         ],
       ),
