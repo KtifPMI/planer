@@ -6,6 +6,7 @@ plugins {
 
 android {
     namespace "com.example.planer"
+    ndkVersion "27.0.12077973"
     compileSdk 36
     ndkVersion flutter.ndkVersion
 
@@ -24,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.planer"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName
