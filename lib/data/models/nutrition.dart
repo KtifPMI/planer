@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-part 'nutrition.g.dart';
-
 @HiveType(typeId: 17)
 enum MealType {
   @HiveField(0)

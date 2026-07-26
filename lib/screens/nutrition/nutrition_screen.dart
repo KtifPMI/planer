@@ -33,7 +33,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         _buildDateSelector(context, ref, l10n, date),
         const Gap(16),
 
-        _buildTotalsCard(context, totals),
+        _buildTotalsCard(context, l10n, totals),
         const Gap(16),
 
         _buildMealSection(context, ref, l10n, MealType.breakfast, '🌅', l10n.breakfast),
@@ -84,7 +84,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return '${date.day} ${l10n.monthName(date.month)}';
   }
 
-  Widget _buildTotalsCard(BuildContext context, Map<String, double> totals) {
+  Widget _buildTotalsCard(BuildContext context, AppLocalizations l10n, Map<String, double> totals) {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
@@ -279,7 +279,6 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
   final _fatController = TextEditingController();
   final _carbsController = TextEditingController();
   final _searchController = TextEditingController();
-  bool _isSearching = false;
 
   @override
   Widget build(BuildContext context) {

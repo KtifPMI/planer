@@ -4,6 +4,7 @@ import '../models/finance.dart';
 import '../models/workout.dart';
 import '../models/planner.dart';
 import '../models/nutrition.dart';
+import '../models/nutrition.g.dart';
 
 class StorageService {
   static late Box<Habit> _habitsBox;
