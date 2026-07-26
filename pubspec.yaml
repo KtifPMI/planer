@@ -49,6 +49,7 @@ dependencies:
 
   # Barcode scanner & nutrition
   mobile_scanner: ^6.0.2
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

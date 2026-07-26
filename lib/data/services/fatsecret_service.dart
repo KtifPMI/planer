@@ -1,50 +1,70 @@
 import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/nutrition.dart';
 import '../../core/config/api_config.dart';
 
 class FatSecretService {
-  static String? _accessToken;
-  static DateTime? _tokenExpiry;
+  static String _generateNonce() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (_) => random.nextInt(256));
+    return base64Url.encode(values);
+  }
 
-  static Future<String?> _getAccessToken() async {
-    if (_accessToken != null && _tokenExpiry != null && DateTime.now().isBefore(_tokenExpiry!)) {
-      return _accessToken;
-    }
+  static String _signRequest(String method, String url, Map<String, String> params) {
+    final sortedParams = SplayTreeMap<String, String>.from(params);
+    final paramString = sortedParams.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
 
-    final credentials = base64Encode(
-      utf8.encode('${ApiConfig.fatSecretClientId}:${ApiConfig.fatSecretClientSecret}'),
-    );
+    final baseString = '$method&${Uri.encodeComponent(url)}&${Uri.encodeComponent(paramString)}';
+    final signingKey = '${Uri.encodeComponent(ApiConfig.fatSecretConsumerSecret)}&';
 
-    try {
-      final response = await http.post(
-        Uri.parse('https://oauth.fatsecret.com/connect/token'),
-        headers: {
-          'Authorization': 'Basic $credentials',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'grant_type=client_credentials&scope=basic',
-      ).timeout(const Duration(seconds: 10));
+    final hmacSha1 = Hmac(sha1, utf8.encode(signingKey));
+    final digest = hmacSha1.convert(utf8.encode(baseString));
+    return base64Encode(digest.bytes);
+  }
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _accessToken = data['access_token'];
-        final expiresIn = data['expires_in'] as int? ?? 3600;
-        _tokenExpiry = DateTime.now().add(Duration(seconds: expiresIn - 60));
-        return _accessToken;
-      }
-    } catch (_) {}
-    return null;
+  static Map<String, String> _oauthHeaders(String method, String url, {Map<String, String>? extraParams}) {
+    final params = <String, String>{
+      'oauth_consumer_key': ApiConfig.fatSecretConsumerKey,
+      'oauth_signature_method': 'HMAC-SHA1',
+      'oauth_timestamp': (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString(),
+      'oauth_nonce': _generateNonce(),
+      'oauth_version': '1.0',
+      ...?extraParams,
+    };
+
+    final signature = _signRequest(method, url, params);
+    params['oauth_signature'] = signature;
+
+    final authHeader = 'OAuth ' + params.entries
+        .where((e) => e.key.startsWith('oauth_'))
+        .map((e) => '${e.key}="${Uri.encodeComponent(e.value)}"')
+        .join(', ');
+
+    return {'Authorization': authHeader};
   }
 
   static Future<FoodItem?> searchByBarcode(String barcode) async {
-    final token = await _getAccessToken();
-    if (token == null) return null;
+    const url = 'https://platform.fatsecret.com/rest/server.api';
+
+    final extraParams = {
+      'method': 'food.get.v3',
+      'barcode': barcode,
+      'format': 'json',
+    };
+
+    final headers = _oauthHeaders('GET', url, extraParams: extraParams);
+    final queryString = extraParams.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
 
     try {
       final response = await http.get(
-        Uri.parse('https://platform.fatsecret.com/rest/server.api?method=food.get.v3&barcode=$barcode&format=json'),
-        headers: {'Authorization': 'Bearer $token'},
+        Uri.parse('$url?$queryString'),
+        headers: headers,
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) return null;
@@ -60,15 +80,25 @@ class FatSecretService {
   }
 
   static Future<List<FoodItem>> searchByName(String query) async {
-    final token = await _getAccessToken();
-    if (token == null) return [];
+    const url = 'https://platform.fatsecret.com/rest/server.api';
+
+    final extraParams = {
+      'method': 'foods.search',
+      'search_expression': query,
+      'format': 'json',
+      'page': '0',
+      'max_results': '10',
+    };
+
+    final headers = _oauthHeaders('GET', url, extraParams: extraParams);
+    final queryString = extraParams.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
 
     try {
       final response = await http.get(
-        Uri.parse(
-          'https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=${Uri.encodeComponent(query)}&format=json&page=0&max_results=10',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+        Uri.parse('$url?$queryString'),
+        headers: headers,
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) return [];
