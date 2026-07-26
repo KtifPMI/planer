@@ -140,6 +140,9 @@ class AppLocalizations {
       'lunch': 'Обед',
       'dinner': 'Ужин',
       'snack': 'Перекус',
+      'secondBreakfast': 'Второй завтрак',
+      'afternoonSnack': 'Полдник',
+      'eveningSnack': 'Вечерний перекус',
       'addFood': 'Добавить продукт',
       'searchProduct': 'Поиск продукта...',
       'foodName': 'Название продукта',
@@ -282,6 +285,9 @@ class AppLocalizations {
       'lunch': 'Lunch',
       'dinner': 'Dinner',
       'snack': 'Snack',
+      'secondBreakfast': 'Second breakfast',
+      'afternoonSnack': 'Afternoon snack',
+      'eveningSnack': 'Evening snack',
       'addFood': 'Add food',
       'searchProduct': 'Search product...',
       'foodName': 'Food name',
@@ -415,6 +421,9 @@ class AppLocalizations {
   String get lunch => _t('lunch');
   String get dinner => _t('dinner');
   String get snack => _t('snack');
+  String get secondBreakfast => _t('secondBreakfast');
+  String get afternoonSnack => _t('afternoonSnack');
+  String get eveningSnack => _t('eveningSnack');
   String get addFood => _t('addFood');
   String get searchProduct => _t('searchProduct');
   String get foodName => _t('foodName');

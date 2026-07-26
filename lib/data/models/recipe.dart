@@ -52,8 +52,8 @@ class Recipe extends HiveObject {
 
   double get totalGrams => ingredients.fold(0, (s, i) => s + i.grams);
 
-  double caloriesPerServing => servings > 0 ? totalCalories / servings : 0;
-  double proteinPerServing => servings > 0 ? totalProtein / servings : 0;
-  double fatPerServing => servings > 0 ? totalFat / servings : 0;
-  double carbsPerServing => servings > 0 ? totalCarbs / servings : 0;
+  double get caloriesPerServing => servings > 0 ? totalCalories / servings : 0;
+  double get proteinPerServing => servings > 0 ? totalProtein / servings : 0;
+  double get fatPerServing => servings > 0 ? totalFat / servings : 0;
+  double get carbsPerServing => servings > 0 ? totalCarbs / servings : 0;
 }

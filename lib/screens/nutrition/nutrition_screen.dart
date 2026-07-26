@@ -40,9 +40,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         const Gap(12),
 
         _buildMealSection(context, ref, l10n, MealType.breakfast, '🌅', l10n.breakfast),
+        _buildMealSection(context, ref, l10n, MealType.secondBreakfast, '🥐', l10n.secondBreakfast),
         _buildMealSection(context, ref, l10n, MealType.lunch, '☀️', l10n.lunch),
+        _buildMealSection(context, ref, l10n, MealType.afternoonSnack, '🧁', l10n.afternoonSnack),
         _buildMealSection(context, ref, l10n, MealType.dinner, '🌙', l10n.dinner),
         _buildMealSection(context, ref, l10n, MealType.snack, '🍪', l10n.snack),
+        _buildMealSection(context, ref, l10n, MealType.eveningSnack, '🍵', l10n.eveningSnack),
 
         const Gap(8),
         _buildRecipesSection(context, ref, l10n),
@@ -685,6 +688,8 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
     final fat = double.tryParse(_fatController.text) ?? 0;
     final carbs = double.tryParse(_carbsController.text) ?? 0;
 
+    final date = ref.read(selectedNutritionDateProvider);
+
     final entry = MealEntry(
       id: NutritionRepository.generateId(),
       foodName: name,
@@ -694,7 +699,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
       protein: protein,
       fat: fat,
       carbs: carbs,
-      date: DateTime.now(),
+      date: DateTime(date.year, date.month, date.day),
     );
 
     await ref.read(nutritionRepositoryProvider).addEntry(entry);

@@ -12,6 +12,9 @@ class MealTypeAdapter extends TypeAdapter<MealType> {
       case 1: return MealType.lunch;
       case 2: return MealType.dinner;
       case 3: return MealType.snack;
+      case 4: return MealType.secondBreakfast;
+      case 5: return MealType.afternoonSnack;
+      case 6: return MealType.eveningSnack;
       default: return MealType.breakfast;
     }
   }
@@ -23,6 +26,9 @@ class MealTypeAdapter extends TypeAdapter<MealType> {
       case MealType.lunch: writer.writeByte(1); break;
       case MealType.dinner: writer.writeByte(2); break;
       case MealType.snack: writer.writeByte(3); break;
+      case MealType.secondBreakfast: writer.writeByte(4); break;
+      case MealType.afternoonSnack: writer.writeByte(5); break;
+      case MealType.eveningSnack: writer.writeByte(6); break;
     }
   }
 }

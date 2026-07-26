@@ -10,6 +10,12 @@ enum MealType {
   dinner,
   @HiveField(3)
   snack,
+  @HiveField(4)
+  secondBreakfast,
+  @HiveField(5)
+  afternoonSnack,
+  @HiveField(6)
+  eveningSnack,
 }
 
 @HiveType(typeId: 18)
