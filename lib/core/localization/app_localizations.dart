@@ -145,6 +145,14 @@ class AppLocalizations {
       'foodName': 'Название продукта',
       'yesterday': 'Вчера',
       'networkError': 'Нет подключения к интернету',
+      'recipes': 'Рецепты',
+      'newRecipe': 'Новый рецепт',
+      'selectRecipe': 'Выбрать рецепт',
+      'ingredients': 'Ингредиенты',
+      'addIngredientsHint': 'Найдите продукт и нажмите +\nчтобы добавить ингредиент',
+      'servings': 'Порций',
+      'tapToEdit': 'Нажмите для редактирования',
+      'nutritionTargets': 'Дневная норма',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -279,6 +287,14 @@ class AppLocalizations {
       'foodName': 'Food name',
       'yesterday': 'Yesterday',
       'networkError': 'No internet connection',
+      'recipes': 'Recipes',
+      'newRecipe': 'New recipe',
+      'selectRecipe': 'Select recipe',
+      'ingredients': 'Ingredients',
+      'addIngredientsHint': 'Search for a food item and tap +\nto add an ingredient',
+      'servings': 'Servings',
+      'tapToEdit': 'Tap to edit',
+      'nutritionTargets': 'Daily targets',
     },
   };
 
@@ -404,6 +420,14 @@ class AppLocalizations {
   String get foodName => _t('foodName');
   String get yesterday => _t('yesterday');
   String get networkError => _t('networkError');
+  String get recipes => _t('recipes');
+  String get newRecipe => _t('newRecipe');
+  String get selectRecipe => _t('selectRecipe');
+  String get ingredients => _t('ingredients');
+  String get addIngredientsHint => _t('addIngredientsHint');
+  String get servings => _t('servings');
+  String get tapToEdit => _t('tapToEdit');
+  String get nutritionTargets => _t('nutritionTargets');
 
   String monthName(int month) {
     const months = [

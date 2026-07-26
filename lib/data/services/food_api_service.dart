@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/nutrition.dart';
 import 'fatsecret_service.dart';
+import 'edamam_service.dart';
 
 class FoodApiException implements Exception {
   final String message;
@@ -13,26 +14,39 @@ class FoodApiException implements Exception {
 
 class FoodApiService {
   static Future<FoodItem?> searchByBarcode(String barcode) async {
-    // 1) Try OpenFoodFacts first
+    // 1) OpenFoodFacts
     final offResult = await _searchOFFByBarcode(barcode);
     if (offResult != null) return offResult;
 
-    // 2) Fallback to FatSecret
+    // 2) Edamam
+    final edResult = await EdamamService.searchByBarcode(barcode);
+    if (edResult != null) return edResult;
+
+    // 3) FatSecret
     final fsResult = await FatSecretService.searchByBarcode(barcode);
     if (fsResult != null) return fsResult;
 
     throw FoodApiException(
-      'Продукт с штрихкодом $barcode не найден ни в одной базе',
+      'Продукт с штрихкодом $barcode не найден',
       isNotFound: true,
     );
   }
 
-  static Future<FoodItem?> searchByBarcodeWithSource(String barcode) async {
-    final offResult = await _searchOFFByBarcode(barcode);
-    if (offResult != null) return offResult;
+  static Future<List<FoodItem>> searchByName(String query) async {
+    final offResults = await _searchOFFByName(query);
+    final fsResults = await FatSecretService.searchByName(query);
+    final edResults = await EdamamService.searchByName(query);
 
-    final fsResult = await FatSecretService.searchByBarcode(barcode);
-    return fsResult;
+    final seen = <String>{};
+    final merged = <FoodItem>[];
+    for (final item in [...offResults, ...fsResults, ...edResults]) {
+      final key = item.name.toLowerCase();
+      if (!seen.contains(key)) {
+        seen.add(key);
+        merged.add(item);
+      }
+    }
+    return merged;
   }
 
   static Future<FoodItem?> _searchOFFByBarcode(String barcode) async {
@@ -65,26 +79,6 @@ class FoodApiService {
     } catch (_) {
       return null;
     }
-  }
-
-  static Future<List<FoodItem>> searchByName(String query) async {
-    // 1) Try OpenFoodFacts
-    final offResults = await _searchOFFByName(query);
-
-    // 2) Also try FatSecret
-    final fsResults = await FatSecretService.searchByName(query);
-
-    // Merge, OFF first, deduplicate by name
-    final seen = <String>{};
-    final merged = <FoodItem>[];
-    for (final item in [...offResults, ...fsResults]) {
-      final key = item.name.toLowerCase();
-      if (!seen.contains(key)) {
-        seen.add(key);
-        merged.add(item);
-      }
-    }
-    return merged;
   }
 
   static Future<List<FoodItem>> _searchOFFByName(String query) async {

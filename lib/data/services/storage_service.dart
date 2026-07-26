@@ -5,6 +5,8 @@ import '../models/workout.dart';
 import '../models/planner.dart';
 import '../models/nutrition.dart';
 import '../models/nutrition.g.dart';
+import '../models/recipe.dart';
+import '../models/recipe.g.dart';
 
 class StorageService {
   static late Box<Habit> _habitsBox;
@@ -18,6 +20,7 @@ class StorageService {
   static late Box<WorkoutTemplate> _workoutTemplatesBox;
   static late Box<WeeklyPlan> _weeklyPlansBox;
   static late Box<MealEntry> _mealEntriesBox;
+  static late Box<Recipe> _recipesBox;
   static late Box _settingsBox;
 
   static Future<void> init() async {
@@ -34,6 +37,7 @@ class StorageService {
     _workoutTemplatesBox = await Hive.openBox<WorkoutTemplate>('workoutTemplates');
     _weeklyPlansBox = await Hive.openBox<WeeklyPlan>('weeklyPlans');
     _mealEntriesBox = await Hive.openBox<MealEntry>('mealEntries');
+    _recipesBox = await Hive.openBox<Recipe>('recipes');
     _settingsBox = await Hive.openBox('settings');
 
     await _seedDefaultCategories();
@@ -60,6 +64,8 @@ class StorageService {
     if (!Hive.isAdapterRegistered(17)) Hive.registerAdapter(MealTypeAdapter());
     if (!Hive.isAdapterRegistered(18)) Hive.registerAdapter(FoodItemAdapter());
     if (!Hive.isAdapterRegistered(19)) Hive.registerAdapter(MealEntryAdapter());
+    if (!Hive.isAdapterRegistered(20)) Hive.registerAdapter(RecipeAdapter());
+    if (!Hive.isAdapterRegistered(21)) Hive.registerAdapter(RecipeIngredientAdapter());
   }
 
   static Future<void> _seedDefaultCategories() async {
@@ -103,5 +109,6 @@ class StorageService {
   static Box<WorkoutTemplate> get workoutTemplatesBox => _workoutTemplatesBox;
   static Box<WeeklyPlan> get weeklyPlansBox => _weeklyPlansBox;
   static Box<MealEntry> get mealEntriesBox => _mealEntriesBox;
+  static Box<Recipe> get recipesBox => _recipesBox;
   static Box get settingsBox => _settingsBox;
 }

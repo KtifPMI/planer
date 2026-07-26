@@ -6,9 +6,12 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/nutrition.dart';
-import '../../providers/nutrition_providers.dart';
+import '../../data/models/recipe.dart';
 import '../../data/repositories/nutrition_repository.dart';
+import '../../data/repositories/recipe_repository.dart';
 import '../../data/services/food_api_service.dart';
+import '../../providers/nutrition_providers.dart';
+import '../../providers/recipe_providers.dart';
 
 class NutritionScreen extends ConsumerStatefulWidget {
   const NutritionScreen({super.key});
@@ -24,6 +27,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final theme = Theme.of(context);
     final totals = ref.watch(todayNutritionTotalsProvider);
     final date = ref.watch(selectedNutritionDateProvider);
+    final targets = ref.watch(nutritionTargetsProvider);
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -31,15 +35,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         Text(l10n.nutrition, style: theme.textTheme.headlineLarge),
         const Gap(8),
         _buildDateSelector(context, ref, l10n, date),
-        const Gap(16),
-
-        _buildTotalsCard(context, l10n, totals),
-        const Gap(16),
+        const Gap(12),
+        _buildTargetsCard(context, ref, l10n, targets, totals),
+        const Gap(12),
 
         _buildMealSection(context, ref, l10n, MealType.breakfast, '🌅', l10n.breakfast),
         _buildMealSection(context, ref, l10n, MealType.lunch, '☀️', l10n.lunch),
         _buildMealSection(context, ref, l10n, MealType.dinner, '🌙', l10n.dinner),
         _buildMealSection(context, ref, l10n, MealType.snack, '🍪', l10n.snack),
+
+        const Gap(8),
+        _buildRecipesSection(context, ref, l10n),
       ],
     );
   }
@@ -84,49 +90,116 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return '${date.day} ${l10n.monthName(date.month)}';
   }
 
-  Widget _buildTotalsCard(BuildContext context, AppLocalizations l10n, Map<String, double> totals) {
+  Widget _buildTargetsCard(BuildContext context, WidgetRef ref, AppLocalizations l10n, NutritionTargets targets, Map<String, double> totals) {
     final theme = Theme.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              '${totals['calories']!.toStringAsFixed(0)} ккал',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showTargetsDialog(context, ref, l10n, targets),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Text(
+                '${totals['calories']!.toStringAsFixed(0)} / ${targets.calories.toStringAsFixed(0)} ккал',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              const Gap(4),
+              Text(
+                '${l10n.today.toLowerCase()}',
+                style: theme.textTheme.bodySmall,
+              ),
+              const Gap(16),
+              _buildProgressRow('Б', totals['protein']!, targets.protein, const Color(0xFFFF6B6B), l10n),
+              const Gap(8),
+              _buildProgressRow('Ж', totals['fat']!, targets.fat, const Color(0xFFFFE066), l10n),
+              const Gap(8),
+              _buildProgressRow('У', totals['carbs']!, targets.carbs, const Color(0xFF4ECDC4), l10n),
+              const Gap(8),
+              Text(
+                l10n.tapToEdit,
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressRow(String label, double current, double target, Color color, AppLocalizations l10n) {
+    final pct = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    return Row(
+      children: [
+        SizedBox(
+          width: 24,
+          child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct,
+              backgroundColor: color.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation(color),
+              minHeight: 8,
             ),
-            const Gap(4),
-            Text(
-              '${l10n.today.toLowerCase()}',
-              style: theme.textTheme.bodySmall,
-            ),
-            const Gap(16),
-            Row(
-              children: [
-                _NutrientBar(
-                  label: 'Б',
-                  value: totals['protein']!,
-                  color: const Color(0xFFFF6B6B),
-                ),
-                const Gap(12),
-                _NutrientBar(
-                  label: 'Ж',
-                  value: totals['fat']!,
-                  color: const Color(0xFFFFE066),
-                ),
-                const Gap(12),
-                _NutrientBar(
-                  label: 'У',
-                  value: totals['carbs']!,
-                  color: const Color(0xFF4ECDC4),
-                ),
-              ],
-            ),
+          ),
+        ),
+        const Gap(8),
+        SizedBox(
+          width: 90,
+          child: Text(
+            '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} г',
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showTargetsDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, NutritionTargets targets) {
+    final calCtrl = TextEditingController(text: targets.calories.toStringAsFixed(0));
+    final protCtrl = TextEditingController(text: targets.protein.toStringAsFixed(0));
+    final fatCtrl = TextEditingController(text: targets.fat.toStringAsFixed(0));
+    final carbsCtrl = TextEditingController(text: targets.carbs.toStringAsFixed(0));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.nutritionTargets),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: calCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'ккал / день')),
+            const Gap(8),
+            TextField(controller: protCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Б (г)')),
+            const Gap(8),
+            TextField(controller: fatCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Ж (г)')),
+            const Gap(8),
+            TextField(controller: carbsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'У (г)')),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          FilledButton(
+            onPressed: () {
+              final newTargets = NutritionTargets(
+                calories: double.tryParse(calCtrl.text) ?? targets.calories,
+                protein: double.tryParse(protCtrl.text) ?? targets.protein,
+                fat: double.tryParse(fatCtrl.text) ?? targets.fat,
+                carbs: double.tryParse(carbsCtrl.text) ?? targets.carbs,
+              );
+              saveNutritionTargets(ref, newTargets);
+              Navigator.pop(ctx);
+            },
+            child: Text(l10n.save),
+          ),
+        ],
       ),
     );
   }
@@ -217,42 +290,54 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       ),
     );
   }
-}
 
-class _NutrientBar extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
+  Widget _buildRecipesSection(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    final recipes = ref.watch(recipesListProvider);
+    final theme = Theme.of(context);
 
-  const _NutrientBar({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: const Text('📖', style: TextStyle(fontSize: 24)),
+          title: Text(l10n.recipes, style: const TextStyle(fontWeight: FontWeight.w600)),
+          trailing: Text(
+            '${recipes.length}',
+            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+          ),
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const Gap(4),
-            Text(
-              '${value.toStringAsFixed(1)} г',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            if (recipes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Нет рецептов', style: TextStyle(color: Colors.grey)),
+              )
+            else
+              ...recipes.map((r) => ListTile(
+                    title: Text(r.name),
+                    subtitle: Text(
+                      '${r.totalCalories.toStringAsFixed(0)} ккал · Б${r.totalProtein.toStringAsFixed(0)} Ж${r.totalFat.toStringAsFixed(0)} У${r.totalCarbs.toStringAsFixed(0)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      onPressed: () async {
+                        await ref.read(recipeRepositoryProvider).delete(r.id);
+                        refreshRecipes(ref);
+                      },
+                    ),
+                  )),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: Text(l10n.newRecipe),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RecipeFormScreen()),
+                );
+                refreshRecipes(ref);
+              },
             ),
           ],
         ),
@@ -280,9 +365,13 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
   final _carbsController = TextEditingController();
   final _searchController = TextEditingController();
 
+  Recipe? _selectedRecipe;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final totals = ref.watch(todayNutritionTotalsProvider);
+    final targets = ref.watch(nutritionTargetsProvider);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -307,6 +396,12 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
                 ),
               ],
             ),
+            const Gap(12),
+
+            _buildMiniProgress(totals, targets, l10n),
+            const Gap(12),
+
+            _buildRecipeSelector(context, ref, l10n),
             const Gap(12),
 
             TextField(
@@ -369,6 +464,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
               controller: _gramsController,
               decoration: const InputDecoration(hintText: 'Граммы'),
               keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
             ),
             const Gap(12),
             Row(
@@ -406,6 +502,8 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
                 ),
               ],
             ),
+            const Gap(12),
+            _buildEntryPreview(totals, targets, l10n),
             const Gap(20),
             SizedBox(
               width: double.infinity,
@@ -418,6 +516,123 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniProgress(Map<String, double> totals, NutritionTargets targets, AppLocalizations l10n) {
+    final grams = double.tryParse(_gramsController.text) ?? 100;
+    final factor = grams / 100;
+    final entryCal = (double.tryParse(_caloriesController.text) ?? 0) * factor;
+    final entryProt = (double.tryParse(_proteinController.text) ?? 0) * factor;
+    final entryFat = (double.tryParse(_fatController.text) ?? 0) * factor;
+    final entryCarbs = (double.tryParse(_carbsController.text) ?? 0) * factor;
+
+    return Column(
+      children: [
+        _buildMiniRow('Ккал', totals['calories']! + entryCal, targets.calories, const Color(0xFF9B59B6)),
+        _buildMiniRow('Б', totals['protein']! + entryProt, targets.protein, const Color(0xFFFF6B6B)),
+        _buildMiniRow('Ж', totals['fat']! + entryFat, targets.fat, const Color(0xFFFFE066)),
+        _buildMiniRow('У', totals['carbs']! + entryCarbs, targets.carbs, const Color(0xFF4ECDC4)),
+      ],
+    );
+  }
+
+  Widget _buildMiniRow(String label, double current, double target, Color color) {
+    final pct = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: pct,
+                backgroundColor: color.withOpacity(0.15),
+                valueColor: AlwaysStoppedAnimation(pct > 1.0 ? Colors.red : color),
+                minHeight: 6,
+              ),
+            ),
+          ),
+          const Gap(6),
+          SizedBox(
+            width: 72,
+            child: Text(
+              '${current.toStringAsFixed(0)}/${target.toStringAsFixed(0)}',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: pct > 1.0 ? Colors.red : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEntryPreview(Map<String, double> totals, NutritionTargets targets, AppLocalizations l10n) {
+    final grams = double.tryParse(_gramsController.text) ?? 100;
+    final cal = double.tryParse(_caloriesController.text) ?? 0;
+    final prot = double.tryParse(_proteinController.text) ?? 0;
+    final fat = double.tryParse(_fatController.text) ?? 0;
+    final carbs = double.tryParse(_carbsController.text) ?? 0;
+
+    if (cal == 0 && prot == 0 && fat == 0 && carbs == 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildPreviewChip('${cal.toStringAsFixed(0)} ккал', const Color(0xFF9B59B6)),
+          _buildPreviewChip('Б ${prot.toStringAsFixed(1)}', const Color(0xFFFF6B6B)),
+          _buildPreviewChip('Ж ${fat.toStringAsFixed(1)}', const Color(0xFFFFE066)),
+          _buildPreviewChip('У ${carbs.toStringAsFixed(1)}', const Color(0xFF4ECDC4)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewChip(String text, Color color) {
+    return Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color));
+  }
+
+  Widget _buildRecipeSelector(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    final recipes = ref.watch(recipesListProvider);
+    if (recipes.isEmpty) return const SizedBox.shrink();
+
+    return DropdownButtonFormField<Recipe>(
+      value: _selectedRecipe,
+      hint: Text(l10n.selectRecipe),
+      isExpanded: true,
+      items: recipes.map((r) => DropdownMenuItem(
+        value: r,
+        child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      )).toList(),
+      onChanged: (recipe) {
+        setState(() {
+          _selectedRecipe = recipe;
+          if (recipe != null) {
+            _nameController.text = recipe.name;
+            final grams = double.tryParse(_gramsController.text) ?? 100;
+            final factor = grams / recipe.totalGrams;
+            _caloriesController.text = (recipe.totalCalories * factor).toStringAsFixed(0);
+            _proteinController.text = (recipe.totalProtein * factor).toStringAsFixed(1);
+            _fatController.text = (recipe.totalFat * factor).toStringAsFixed(1);
+            _carbsController.text = (recipe.totalCarbs * factor).toStringAsFixed(1);
+          }
+        });
+      },
     );
   }
 
@@ -484,6 +699,203 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
 
     await ref.read(nutritionRepositoryProvider).addEntry(entry);
     widget.onFoodAdded();
+    if (mounted) Navigator.pop(context);
+  }
+}
+
+class RecipeFormScreen extends ConsumerStatefulWidget {
+  const RecipeFormScreen({super.key});
+
+  @override
+  ConsumerState<RecipeFormScreen> createState() => _RecipeFormScreenState();
+}
+
+class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
+  final _nameController = TextEditingController();
+  final _servingsController = TextEditingController(text: '1');
+  final _searchController = TextEditingController();
+  final List<RecipeIngredient> _ingredients = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    final totalCal = _ingredients.fold(0.0, (s, i) => s + i.calories);
+    final totalProt = _ingredients.fold(0.0, (s, i) => s + i.protein);
+    final totalFat = _ingredients.fold(0.0, (s, i) => s + i.fat);
+    final totalCarbs = _ingredients.fold(0.0, (s, i) => s + i.carbs);
+    final totalGrams = _ingredients.fold(0.0, (s, i) => s + i.grams);
+    final servings = int.tryParse(_servingsController.text) ?? 1;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.newRecipe),
+        actions: [
+          TextButton(
+            onPressed: _saveRecipe,
+            child: Text(l10n.save, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          TextField(controller: _nameController, decoration: InputDecoration(hintText: '${l10n.name} рецепта')),
+          const Gap(12),
+          TextField(
+            controller: _servingsController,
+            decoration: const InputDecoration(hintText: 'Порций'),
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}),
+          ),
+          const Gap(16),
+
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: l10n.searchProduct,
+              prefixIcon: const Icon(Icons.search),
+            ),
+            onChanged: (v) {
+              ref.read(foodSearchQueryProvider.notifier).state = v;
+            },
+          ),
+          const Gap(8),
+
+          ref.watch(foodSearchResultsProvider).when(
+            data: (results) {
+              if (results.isEmpty || _searchController.text.isEmpty) return const SizedBox.shrink();
+              return SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  itemCount: results.length,
+                  itemBuilder: (ctx, i) {
+                    final food = results[i];
+                    return ListTile(
+                      dense: true,
+                      title: Text(food.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        '${food.calories.toStringAsFixed(0)} ккал · Б${food.protein.toStringAsFixed(0)} Ж${food.fat.toStringAsFixed(0)} У${food.carbs.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.add_circle_outline),
+                      onTap: () => _addIngredientFromFood(food),
+                    );
+                  },
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+          const Gap(16),
+
+          if (_ingredients.isNotEmpty) ...[
+            Text('${l10n.ingredients} (${_ingredients.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const Gap(8),
+            ..._ingredients.asMap().entries.map((entry) {
+              final i = entry.key;
+              final ing = entry.value;
+              return Card(
+                child: ListTile(
+                  dense: true,
+                  title: Text(ing.foodName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    '${ing.grams.toStringAsFixed(0)} г · ${ing.calories.toStringAsFixed(0)} ккал',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _ingredients.removeAt(i)),
+                  ),
+                ),
+              );
+            }),
+            const Divider(),
+            _buildRecipeSummary(totalCal, totalProt, totalFat, totalCarbs, totalGrams, servings),
+          ] else
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Text(
+                  l10n.addIngredientsHint,
+                  style: const TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecipeSummary(double cal, double prot, double fat, double carbs, double grams, int servings) {
+    final s = servings > 0 ? servings : 1;
+    return Card(
+      color: AppColors.primary.withOpacity(0.08),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Всего: ${grams.toStringAsFixed(0)} г', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const Gap(4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Text('${cal.toStringAsFixed(0)} ккал', style: const TextStyle(fontSize: 13)),
+                Text('Б ${prot.toStringAsFixed(1)}', style: const TextStyle(fontSize: 13)),
+                Text('Ж ${fat.toStringAsFixed(1)}', style: const TextStyle(fontSize: 13)),
+                Text('У ${carbs.toStringAsFixed(1)}', style: const TextStyle(fontSize: 13)),
+              ],
+            ),
+            if (servings > 1) ...[
+              const Divider(),
+              Text('На порцию (${s} шт):', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Text('${(cal / s).toStringAsFixed(0)} ккал', style: const TextStyle(fontSize: 12)),
+                  Text('Б ${(prot / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  Text('Ж ${(fat / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  Text('У ${(carbs / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addIngredientFromFood(FoodItem food) {
+    _searchController.clear();
+    ref.read(foodSearchQueryProvider.notifier).state = '';
+    _ingredients.add(RecipeIngredient(
+      foodName: food.name,
+      grams: 100,
+      calories: food.calories,
+      protein: food.protein,
+      fat: food.fat,
+      carbs: food.carbs,
+      barcode: food.barcode,
+    ));
+    setState(() {});
+  }
+
+  void _saveRecipe() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty || _ingredients.isEmpty) return;
+
+    final recipe = Recipe(
+      id: RecipeRepository.generateId(),
+      name: name,
+      ingredients: _ingredients,
+      servings: int.tryParse(_servingsController.text) ?? 1,
+    );
+
+    await ref.read(recipeRepositoryProvider).save(recipe);
+    refreshRecipes(ref);
     if (mounted) Navigator.pop(context);
   }
 }
