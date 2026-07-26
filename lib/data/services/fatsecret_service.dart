@@ -13,7 +13,8 @@ class FatSecretService {
   }
 
   static String _signRequest(String method, String url, Map<String, String> params) {
-    final sortedParams = SplayTreeMap<String, String>.from(params);
+    final sortedKeys = params.keys.toList()..sort();
+    final sortedParams = {for (final k in sortedKeys) k: params[k]!};
     final paramString = sortedParams.entries
         .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
         .join('&');
