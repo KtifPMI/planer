@@ -441,9 +441,22 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
     );
     if (result == null || !mounted) return;
 
-    final food = await FoodApiService.searchByBarcode(result);
-    if (food != null && mounted) {
-      _fillFromFood(food);
+    try {
+      final food = await FoodApiService.searchByBarcode(result);
+      if (food != null && mounted) {
+        _fillFromFood(food);
+      }
+    } on FoodApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.isNotFound
+                ? 'Продукт не найден. Введите данные вручную.'
+                : e.message),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

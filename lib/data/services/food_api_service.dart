@@ -2,26 +2,43 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/nutrition.dart';
 
+class FoodApiException implements Exception {
+  final String message;
+  final bool isNotFound;
+  FoodApiException(this.message, {this.isNotFound = false});
+  @override
+  String toString() => message;
+}
+
 class FoodApiService {
   static Future<FoodItem?> searchByBarcode(String barcode) async {
     final url = Uri.parse(
-      'https://world.openfoodfacts.org/api/v2/product/$barcode.json',
+      'https://world.openfoodfacts.org/api/v2/product/$barcode.json?lang=ru&fields=product_name,generic_name,nutriments,brands,image_front_url',
     );
 
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return null;
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        throw FoodApiException('Ошибка сервера (${response.statusCode})');
+      }
 
       final data = json.decode(response.body);
-      if (data['status'] != 1) return null;
+      if (data['status'] != 1 || data['product'] == null) {
+        throw FoodApiException(
+          'Продукт с штрихкодом $barcode не найден в базе OpenFoodFacts',
+          isNotFound: true,
+        );
+      }
 
       final product = data['product'];
-      if (product == null) return null;
-
       final nutriments = product['nutriments'] ?? {};
 
+      final name = product['product_name'] ??
+          product['generic_name'] ??
+          'Неизвестный продукт';
+
       return FoodItem(
-        name: product['product_name'] ?? product['generic_name'] ?? 'Неизвестный продукт',
+        name: name,
         barcode: barcode,
         calories: _toDouble(nutriments['energy-kcal_100g']),
         protein: _toDouble(nutriments['proteins_100g']),
@@ -30,18 +47,20 @@ class FoodApiService {
         brand: product['brands'],
         imageUrl: product['image_front_url'],
       );
-    } catch (_) {
-      return null;
+    } on FoodApiException {
+      rethrow;
+    } catch (e) {
+      throw FoodApiException('Нет подключения к интернету или таймаут запроса');
     }
   }
 
   static Future<List<FoodItem>> searchByName(String query) async {
     final url = Uri.parse(
-      'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(query)}&search_simple=1&action=process&json=1&page_size=10',
+      'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(query)}&search_simple=1&action=process&json=1&page_size=10&lang=ru',
     );
 
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) return [];
 
       final data = json.decode(response.body);
