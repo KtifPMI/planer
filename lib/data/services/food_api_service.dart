@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/nutrition.dart';
+import '../services/storage_service.dart';
 import 'fatsecret_service.dart';
 import 'edamam_service.dart';
 
@@ -33,13 +34,14 @@ class FoodApiService {
   }
 
   static Future<List<FoodItem>> searchByName(String query) async {
+    final customResults = _searchCustom(query);
     final offResults = await _searchOFFByName(query);
     final fsResults = await FatSecretService.searchByName(query);
     final edResults = await EdamamService.searchByName(query);
 
     final seen = <String>{};
     final merged = <FoodItem>[];
-    for (final item in [...offResults, ...fsResults, ...edResults]) {
+    for (final item in [...customResults, ...offResults, ...fsResults, ...edResults]) {
       final key = item.name.toLowerCase();
       if (!seen.contains(key)) {
         seen.add(key);
@@ -47,6 +49,20 @@ class FoodApiService {
       }
     }
     return merged;
+  }
+
+  static List<FoodItem> _searchCustom(String query) {
+    try {
+      final box = StorageService.customFoodsBox;
+      if (query.isEmpty) return box.values.toList();
+      final q = query.toLowerCase();
+      return box.values.where((f) =>
+        f.name.toLowerCase().contains(q) ||
+        (f.brand?.toLowerCase().contains(q) ?? false)
+      ).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   static Future<FoodItem?> _searchOFFByBarcode(String barcode) async {

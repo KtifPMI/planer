@@ -21,6 +21,7 @@ class StorageService {
   static late Box<WeeklyPlan> _weeklyPlansBox;
   static late Box<MealEntry> _mealEntriesBox;
   static late Box<Recipe> _recipesBox;
+  static late Box<FoodItem> _customFoodsBox;
   static late Box _settingsBox;
 
   static Future<void> init() async {
@@ -38,6 +39,7 @@ class StorageService {
     _weeklyPlansBox = await Hive.openBox<WeeklyPlan>('weeklyPlans');
     _mealEntriesBox = await Hive.openBox<MealEntry>('mealEntries');
     _recipesBox = await Hive.openBox<Recipe>('recipes');
+    _customFoodsBox = await Hive.openBox<FoodItem>('customFoods');
     _settingsBox = await Hive.openBox('settings');
 
     await _seedDefaultCategories();
@@ -110,5 +112,6 @@ class StorageService {
   static Box<WeeklyPlan> get weeklyPlansBox => _weeklyPlansBox;
   static Box<MealEntry> get mealEntriesBox => _mealEntriesBox;
   static Box<Recipe> get recipesBox => _recipesBox;
+  static Box<FoodItem> get customFoodsBox => _customFoodsBox;
   static Box get settingsBox => _settingsBox;
 }

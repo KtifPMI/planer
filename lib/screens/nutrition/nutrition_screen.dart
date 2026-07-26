@@ -319,7 +319,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               ...recipes.map((r) => ListTile(
                     title: Text(r.name),
                     subtitle: Text(
-                      '${r.totalCalories.toStringAsFixed(0)} ккал · Б${r.totalProtein.toStringAsFixed(0)} Ж${r.totalFat.toStringAsFixed(0)} У${r.totalCarbs.toStringAsFixed(0)}',
+                      '${r.totalGrams.toStringAsFixed(0)} г · ${r.sumCalories.toStringAsFixed(0)} ккал · Б${r.sumProtein.toStringAsFixed(0)} Ж${r.sumFat.toStringAsFixed(0)} У${r.sumCarbs.toStringAsFixed(0)}',
                       style: const TextStyle(fontSize: 12),
                     ),
                     trailing: IconButton(
@@ -628,11 +628,11 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
           if (recipe != null) {
             _nameController.text = recipe.name;
             final grams = double.tryParse(_gramsController.text) ?? 100;
-            final factor = grams / recipe.totalGrams;
-            _caloriesController.text = (recipe.totalCalories * factor).toStringAsFixed(0);
-            _proteinController.text = (recipe.totalProtein * factor).toStringAsFixed(1);
-            _fatController.text = (recipe.totalFat * factor).toStringAsFixed(1);
-            _carbsController.text = (recipe.totalCarbs * factor).toStringAsFixed(1);
+            final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : grams / 100;
+            _caloriesController.text = (recipe.sumCalories * factor).toStringAsFixed(0);
+            _proteinController.text = (recipe.sumProtein * factor).toStringAsFixed(1);
+            _fatController.text = (recipe.sumFat * factor).toStringAsFixed(1);
+            _carbsController.text = (recipe.sumCarbs * factor).toStringAsFixed(1);
           }
         });
       },
@@ -717,9 +717,16 @@ class RecipeFormScreen extends ConsumerStatefulWidget {
 
 class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
   final _nameController = TextEditingController();
-  final _servingsController = TextEditingController(text: '1');
+  final _totalGramsController = TextEditingController();
   final _searchController = TextEditingController();
   final List<RecipeIngredient> _ingredients = [];
+
+  bool _showCustomFoodForm = false;
+  final _cfNameController = TextEditingController();
+  final _cfCalController = TextEditingController();
+  final _cfProtController = TextEditingController();
+  final _cfFatController = TextEditingController();
+  final _cfCarbsController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -730,7 +737,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
     final totalFat = _ingredients.fold(0.0, (s, i) => s + i.fat);
     final totalCarbs = _ingredients.fold(0.0, (s, i) => s + i.carbs);
     final totalGrams = _ingredients.fold(0.0, (s, i) => s + i.grams);
-    final servings = int.tryParse(_servingsController.text) ?? 1;
+    final targetGrams = double.tryParse(_totalGramsController.text) ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -748,24 +755,38 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
           TextField(controller: _nameController, decoration: InputDecoration(hintText: '${l10n.name} рецепта')),
           const Gap(12),
           TextField(
-            controller: _servingsController,
-            decoration: const InputDecoration(hintText: 'Порций'),
+            controller: _totalGramsController,
+            decoration: InputDecoration(hintText: '${l10n.totalGrams} (${l10n.recipeTotalGramsHint})'),
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
           ),
           const Gap(16),
 
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: l10n.searchProduct,
-              prefixIcon: const Icon(Icons.search),
-            ),
-            onChanged: (v) {
-              ref.read(foodSearchQueryProvider.notifier).state = v;
-            },
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: l10n.searchProduct,
+                    prefixIcon: const Icon(Icons.search),
+                  ),
+                  onChanged: (v) {
+                    ref.read(foodSearchQueryProvider.notifier).state = v;
+                  },
+                ),
+              ),
+              const Gap(8),
+              IconButton.filled(
+                onPressed: () => setState(() => _showCustomFoodForm = !_showCustomFoodForm),
+                icon: Icon(_showCustomFoodForm ? Icons.close : Icons.add),
+                tooltip: l10n.createCustomFood,
+              ),
+            ],
           ),
           const Gap(8),
+
+          if (_showCustomFoodForm) _buildCustomFoodForm(l10n),
 
           ref.watch(foodSearchResultsProvider).when(
             data: (results) {
@@ -780,7 +801,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
                       dense: true,
                       title: Text(food.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text(
-                        '${food.calories.toStringAsFixed(0)} ккал · Б${food.protein.toStringAsFixed(0)} Ж${food.fat.toStringAsFixed(0)} У${food.carbs.toStringAsFixed(0)}',
+                        '${food.calories.toStringAsFixed(0)} ккал/100г · Б${food.protein.toStringAsFixed(0)} Ж${food.fat.toStringAsFixed(0)} У${food.carbs.toStringAsFixed(0)}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       trailing: const Icon(Icons.add_circle_outline),
@@ -817,7 +838,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
               );
             }),
             const Divider(),
-            _buildRecipeSummary(totalCal, totalProt, totalFat, totalCarbs, totalGrams, servings),
+            _buildRecipeSummary(totalCal, totalProt, totalFat, totalCarbs, totalGrams, targetGrams),
           ] else
             Padding(
               padding: const EdgeInsets.all(32),
@@ -834,8 +855,78 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
     );
   }
 
-  Widget _buildRecipeSummary(double cal, double prot, double fat, double carbs, double grams, int servings) {
-    final s = servings > 0 ? servings : 1;
+  Widget _buildCustomFoodForm(AppLocalizations l10n) {
+    return Card(
+      color: AppColors.primary.withOpacity(0.06),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.createCustomFood, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const Gap(8),
+            TextField(controller: _cfNameController, decoration: InputDecoration(hintText: l10n.foodName, isDense: true)),
+            const Gap(8),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: _cfCalController, decoration: const InputDecoration(hintText: 'Ккал/100г', isDense: true), keyboardType: TextInputType.number)),
+                const Gap(6),
+                Expanded(child: TextField(controller: _cfProtController, decoration: const InputDecoration(hintText: 'Б', isDense: true), keyboardType: TextInputType.number)),
+                const Gap(6),
+                Expanded(child: TextField(controller: _cfFatController, decoration: const InputDecoration(hintText: 'Ж', isDense: true), keyboardType: TextInputType.number)),
+                const Gap(6),
+                Expanded(child: TextField(controller: _cfCarbsController, decoration: const InputDecoration(hintText: 'У', isDense: true), keyboardType: TextInputType.number)),
+              ],
+            ),
+            const Gap(8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: _saveCustomFood,
+                child: Text(l10n.save),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _saveCustomFood() async {
+    final name = _cfNameController.text.trim();
+    if (name.isEmpty) return;
+
+    final food = FoodItem(
+      name: name,
+      calories: double.tryParse(_cfCalController.text) ?? 0,
+      protein: double.tryParse(_cfProtController.text) ?? 0,
+      fat: double.tryParse(_cfFatController.text) ?? 0,
+      carbs: double.tryParse(_cfCarbsController.text) ?? 0,
+    );
+
+    await ref.read(customFoodRepositoryProvider).save(food);
+    refreshCustomFoods(ref);
+
+    _cfNameController.clear();
+    _cfCalController.clear();
+    _cfProtController.clear();
+    _cfFatController.clear();
+    _cfCarbsController.clear();
+    setState(() => _showCustomFoodForm = false);
+
+    _searchController.text = name;
+    ref.read(foodSearchQueryProvider.notifier).state = name;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$name ${AppLocalizations.of(context).saved}'), duration: const Duration(seconds: 2)),
+      );
+    }
+  }
+
+  Widget _buildRecipeSummary(double cal, double prot, double fat, double carbs, double sumGrams, double targetGrams) {
+    final factor = targetGrams > 0 && sumGrams > 0 ? targetGrams / sumGrams : 1.0;
     return Card(
       color: AppColors.primary.withOpacity(0.08),
       child: Padding(
@@ -843,8 +934,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Всего: ${grams.toStringAsFixed(0)} г', style: const TextStyle(fontWeight: FontWeight.bold)),
-            const Gap(4),
+            Text('Суммарно: ${sumGrams.toStringAsFixed(0)} г', style: const TextStyle(fontWeight: FontWeight.bold)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -854,16 +944,16 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
                 Text('У ${carbs.toStringAsFixed(1)}', style: const TextStyle(fontSize: 13)),
               ],
             ),
-            if (servings > 1) ...[
+            if (targetGrams > 0 && (targetGrams - sumGrams).abs() > 1) ...[
               const Divider(),
-              Text('На порцию (${s} шт):', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('На ${targetGrams.toStringAsFixed(0)} г:', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text('${(cal / s).toStringAsFixed(0)} ккал', style: const TextStyle(fontSize: 12)),
-                  Text('Б ${(prot / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
-                  Text('Ж ${(fat / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
-                  Text('У ${(carbs / s).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  Text('${(cal * factor).toStringAsFixed(0)} ккал', style: const TextStyle(fontSize: 12)),
+                  Text('Б ${(prot * factor).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  Text('Ж ${(fat * factor).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+                  Text('У ${(carbs * factor).toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
                 ],
               ),
             ],
@@ -896,7 +986,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
       id: RecipeRepository.generateId(),
       name: name,
       ingredients: _ingredients,
-      servings: int.tryParse(_servingsController.text) ?? 1,
+      totalGrams: double.tryParse(_totalGramsController.text) ?? _ingredients.fold(0.0, (s, i) => s + i.grams),
     );
 
     await ref.read(recipeRepositoryProvider).save(recipe);

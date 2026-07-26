@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/models/nutrition.dart';
 import '../data/models/recipe.dart';
 import '../data/repositories/recipe_repository.dart';
+import '../data/repositories/custom_food_repository.dart';
 import '../data/services/storage_service.dart';
 
 final recipeRepositoryProvider = Provider<RecipeRepository>((ref) {
@@ -17,6 +19,21 @@ final recipesRefreshProvider = StateProvider<int>((ref) => 0);
 void refreshRecipes(WidgetRef ref) {
   ref.read(recipesRefreshProvider.notifier).state++;
 }
+
+final customFoodRepositoryProvider = Provider<CustomFoodRepository>((ref) {
+  return CustomFoodRepository();
+});
+
+final customFoodsRefreshProvider = StateProvider<int>((ref) => 0);
+
+void refreshCustomFoods(WidgetRef ref) {
+  ref.read(customFoodsRefreshProvider.notifier).state++;
+}
+
+final customFoodsListProvider = Provider<List<FoodItem>>((ref) {
+  ref.watch(customFoodsRefreshProvider);
+  return ref.watch(customFoodRepositoryProvider).getAll();
+});
 
 class NutritionTargets {
   final double calories;

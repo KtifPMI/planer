@@ -30,7 +30,7 @@ class Recipe extends HiveObject {
   @HiveField(4) double targetProtein;
   @HiveField(5) double targetFat;
   @HiveField(6) double targetCarbs;
-  @HiveField(7) int servings;
+  @HiveField(7) double totalGrams;
   @HiveField(8) DateTime createdAt;
 
   Recipe({
@@ -41,19 +41,13 @@ class Recipe extends HiveObject {
     this.targetProtein = 0,
     this.targetFat = 0,
     this.targetCarbs = 0,
-    this.servings = 1,
+    this.totalGrams = 0,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  double get totalCalories => ingredients.fold(0, (s, i) => s + i.calories);
-  double get totalProtein => ingredients.fold(0, (s, i) => s + i.protein);
-  double get totalFat => ingredients.fold(0, (s, i) => s + i.fat);
-  double get totalCarbs => ingredients.fold(0, (s, i) => s + i.carbs);
-
-  double get totalGrams => ingredients.fold(0, (s, i) => s + i.grams);
-
-  double get caloriesPerServing => servings > 0 ? totalCalories / servings : 0;
-  double get proteinPerServing => servings > 0 ? totalProtein / servings : 0;
-  double get fatPerServing => servings > 0 ? totalFat / servings : 0;
-  double get carbsPerServing => servings > 0 ? totalCarbs / servings : 0;
+  double get sumCalories => ingredients.fold(0, (s, i) => s + i.calories);
+  double get sumProtein => ingredients.fold(0, (s, i) => s + i.protein);
+  double get sumFat => ingredients.fold(0, (s, i) => s + i.fat);
+  double get sumCarbs => ingredients.fold(0, (s, i) => s + i.carbs);
+  double get sumGrams => ingredients.fold(0, (s, i) => s + i.grams);
 }

@@ -10,6 +10,8 @@ import '../../providers/habit_providers.dart';
 import '../../providers/finance_providers.dart';
 import '../../providers/workout_providers.dart';
 import '../../providers/planner_providers.dart';
+import '../../providers/nutrition_providers.dart';
+import '../../providers/recipe_providers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -27,6 +29,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(monthExpenseProvider);
     ref.invalidate(workoutCountThisMonthProvider);
     ref.invalidate(weekAnalyticsProvider);
+    ref.invalidate(todayNutritionTotalsProvider);
   }
 
   @override
@@ -153,6 +156,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         const Gap(12),
 
+        // Nutrition
+        _buildNutritionCard(context, ref, l10n, theme),
+        const Gap(12),
+
         // Weekly planner
         Card(
           child: InkWell(
@@ -197,6 +204,81 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNutritionCard(BuildContext context, WidgetRef ref, AppLocalizations l10n, ThemeData theme) {
+    final totals = ref.watch(todayNutritionTotalsProvider);
+    final targets = ref.watch(nutritionTargetsProvider);
+    final calPct = targets.calories > 0 ? (totals['calories']! / targets.calories).clamp(0.0, 1.0) : 0.0;
+    final protPct = targets.protein > 0 ? (totals['protein']! / targets.protein).clamp(0.0, 1.0) : 0.0;
+    final fatPct = targets.fat > 0 ? (totals['fat']! / targets.fat).clamp(0.0, 1.0) : 0.0;
+    final carbsPct = targets.carbs > 0 ? (totals['carbs']! / targets.carbs).clamp(0.0, 1.0) : 0.0;
+
+    return Card(
+      child: InkWell(
+        onTap: () => context.go('/nutrition'),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.restaurant, color: AppColors.primary, size: 20),
+                  const Gap(8),
+                  Expanded(child: Text(l10n.nutrition, style: theme.textTheme.titleLarge)),
+                  Text(
+                    '${totals['calories']!.toStringAsFixed(0)} / ${targets.calories.toStringAsFixed(0)}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(12),
+              _buildDashProgressRow('Б', totals['protein']!, targets.protein, protPct, const Color(0xFFFF6B6B)),
+              const Gap(6),
+              _buildDashProgressRow('Ж', totals['fat']!, targets.fat, fatPct, const Color(0xFFFFE066)),
+              const Gap(6),
+              _buildDashProgressRow('У', totals['carbs']!, targets.carbs, carbsPct, const Color(0xFF4ECDC4)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashProgressRow(String label, double current, double target, double pct, Color color) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: pct,
+              backgroundColor: color.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation(pct > 1.0 ? Colors.red : color),
+              minHeight: 6,
+            ),
+          ),
+        ),
+        const Gap(8),
+        SizedBox(
+          width: 70,
+          child: Text(
+            '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}',
+            textAlign: TextAlign.right,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: pct > 1.0 ? Colors.red : null),
           ),
         ),
       ],

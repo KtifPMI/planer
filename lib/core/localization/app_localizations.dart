@@ -156,6 +156,10 @@ class AppLocalizations {
       'servings': 'Порций',
       'tapToEdit': 'Нажмите для редактирования',
       'nutritionTargets': 'Дневная норма',
+      'totalGrams': 'Общая масса',
+      'recipeTotalGramsHint': 'суммарная масса блюд',
+      'createCustomFood': 'Создать продукт',
+      'saved': 'сохранён',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -301,6 +305,10 @@ class AppLocalizations {
       'servings': 'Servings',
       'tapToEdit': 'Tap to edit',
       'nutritionTargets': 'Daily targets',
+      'totalGrams': 'Total weight',
+      'recipeTotalGramsHint': 'total weight of all ingredients',
+      'createCustomFood': 'Create food item',
+      'saved': 'saved',
     },
   };
 
@@ -437,6 +445,10 @@ class AppLocalizations {
   String get servings => _t('servings');
   String get tapToEdit => _t('tapToEdit');
   String get nutritionTargets => _t('nutritionTargets');
+  String get totalGrams => _t('totalGrams');
+  String get recipeTotalGramsHint => _t('recipeTotalGramsHint');
+  String get createCustomFood => _t('createCustomFood');
+  String get saved => _t('saved');
 
   String monthName(int month) {
     const months = [

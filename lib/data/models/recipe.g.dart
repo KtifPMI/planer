@@ -62,7 +62,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       targetProtein: fields[4] as double,
       targetFat: fields[5] as double,
       targetCarbs: fields[6] as double,
-      servings: fields[7] as int,
+      totalGrams: fields[7] as double,
       createdAt: fields[8] as DateTime,
     );
   }
@@ -85,7 +85,7 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
     writer.writeByte(6);
     writer.write(obj.targetCarbs);
     writer.writeByte(7);
-    writer.write(obj.servings);
+    writer.write(obj.totalGrams);
     writer.writeByte(8);
     writer.write(obj.createdAt);
   }
