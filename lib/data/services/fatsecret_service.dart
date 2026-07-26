@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/nutrition.dart';
-import '../config/api_config.dart';
+import '../../core/config/api_config.dart';
 
 class FatSecretService {
   static String? _accessToken;
@@ -76,7 +76,7 @@ class FatSecretService {
       final data = json.decode(response.body);
       final foods = data['foods']?['food'] as List? ?? [];
 
-      return foods.map<FoodItem>((f) => _parseFoodItem(f)).whereType<FoodItem>().toList();
+      return foods.map((f) => _parseFoodItem(f)).whereType<FoodItem>().toList();
     } catch (_) {
       return [];
     }
