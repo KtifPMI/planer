@@ -9,6 +9,10 @@ class HabitRepository {
 
   List<Habit> getAll() => _box.values.toList();
 
+  List<Habit> getScheduledForDate(DateTime date) {
+    return _box.values.where((h) => h.isScheduledForDate(date)).toList();
+  }
+
   Future<void> add(Habit habit) => _box.put(habit.id, habit);
 
   Future<void> update(Habit habit) => _box.put(habit.id, habit);

@@ -20,13 +20,17 @@ class HabitAdapter extends TypeAdapter<Habit> {
       unit: fields[4] as String,
       isBoolean: fields[5] as bool,
       createdAt: fields[6] as DateTime,
+      frequencyIndex: fields[7] as int? ?? 0,
+      weekDays: (fields[8] as List?)?.cast<int>() ?? const [],
+      intervalDays: fields[9] as int? ?? 2,
+      startDate: fields[10] as DateTime? ?? DateTime.now(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -40,7 +44,15 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..writeByte(5)
       ..write(obj.isBoolean)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.frequencyIndex)
+      ..writeByte(8)
+      ..write(obj.weekDays)
+      ..writeByte(9)
+      ..write(obj.intervalDays)
+      ..writeByte(10)
+      ..write(obj.startDate);
   }
 
   @override

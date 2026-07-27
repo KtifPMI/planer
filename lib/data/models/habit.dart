@@ -2,6 +2,8 @@ import 'package:hive/hive.dart';
 
 part 'habit.g.dart';
 
+enum HabitFrequency { daily, weekly, interval }
+
 @HiveType(typeId: 0)
 class Habit extends HiveObject {
   @HiveField(0)
@@ -25,6 +27,20 @@ class Habit extends HiveObject {
   @HiveField(6)
   DateTime createdAt;
 
+  @HiveField(7)
+  int frequencyIndex;
+
+  @HiveField(8)
+  List<int> weekDays;
+
+  @HiveField(9)
+  int intervalDays;
+
+  @HiveField(10)
+  DateTime startDate;
+
+  HabitFrequency get frequency => HabitFrequency.values[frequencyIndex];
+
   Habit({
     required this.id,
     required this.name,
@@ -33,7 +49,29 @@ class Habit extends HiveObject {
     this.unit = 'раз',
     this.isBoolean = false,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.frequencyIndex = 0,
+    List<int>? weekDays,
+    this.intervalDays = 2,
+    DateTime? startDate,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        weekDays = weekDays ?? const [],
+        startDate = startDate ?? DateTime.now();
+
+  bool isScheduledForDate(DateTime date) {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final normalizedStart = DateTime(startDate.year, startDate.month, startDate.day);
+
+    switch (frequency) {
+      case HabitFrequency.daily:
+        return true;
+      case HabitFrequency.weekly:
+        return weekDays.contains(date.weekday);
+      case HabitFrequency.interval:
+        if (normalizedDate.isBefore(normalizedStart)) return false;
+        final daysDiff = normalizedDate.difference(normalizedStart).inDays;
+        return daysDiff % intervalDays == 0;
+    }
+  }
 }
 
 @HiveType(typeId: 1)

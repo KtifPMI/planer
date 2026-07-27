@@ -101,8 +101,8 @@ class HabitEntrySetter {
 // Today's completion stats
 final todayStatsProvider = Provider<Map<String, dynamic>>((ref) {
   final repo = ref.read(habitRepositoryProvider);
-  final habits = repo.getAll();
   final today = DateTime.now();
+  final habits = repo.getScheduledForDate(today);
   int done = 0;
   for (final h in habits) {
     if (repo.getValueForDate(h.id, today) > 0) done++;

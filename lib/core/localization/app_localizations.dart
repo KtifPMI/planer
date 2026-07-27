@@ -195,6 +195,14 @@ class AppLocalizations {
       'caloriesShort': 'Ккал',
       'caloriesHint': 'Ккал',
       'pay': 'Оплатить',
+      'frequency': 'Частота',
+      'everyDay': 'Каждый день',
+      'specificDays': 'Определённые дни',
+      'everyNDays': 'Через N дней',
+      'interval': 'Интервал (дней)',
+      'selectDays': 'Выберите дни',
+      'scheduledForToday': 'Запланировано на сегодня',
+      'noHabitsToday': 'На сегодня нет запланированных привычек',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -379,6 +387,14 @@ class AppLocalizations {
       'caloriesShort': 'Kcal',
       'caloriesHint': 'Kcal',
       'pay': 'Pay',
+      'frequency': 'Frequency',
+      'everyDay': 'Every day',
+      'specificDays': 'Specific days',
+      'everyNDays': 'Every N days',
+      'interval': 'Interval (days)',
+      'selectDays': 'Select days',
+      'scheduledForToday': 'Scheduled for today',
+      'noHabitsToday': 'No habits scheduled for today',
     },
   };
 
@@ -552,6 +568,14 @@ class AppLocalizations {
   String get caloriesShort => _t('caloriesShort');
   String get caloriesHint => _t('caloriesHint');
   String get pay => _t('pay');
+  String get frequency => _t('frequency');
+  String get everyDay => _t('everyDay');
+  String get specificDays => _t('specificDays');
+  String get everyNDays => _t('everyNDays');
+  String get interval => _t('interval');
+  String get selectDays => _t('selectDays');
+  String get scheduledForToday => _t('scheduledForToday');
+  String get noHabitsToday => _t('noHabitsToday');
 
   String monthName(int month) {
     const months = [

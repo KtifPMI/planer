@@ -39,6 +39,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final habits = ref.watch(habitsListProvider);
+    final scheduledHabits = habits.where((h) => h.isScheduledForDate(_selectedDate)).toList();
 
     return Scaffold(
       body: Column(
@@ -48,18 +49,20 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
           Expanded(
             child: habits.isEmpty
                 ? _buildEmpty(l10n, theme)
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: habits.length,
-                    itemBuilder: (ctx, i) => _HabitCard(
-                      habit: habits[i],
-                      selectedDate: _selectedDate,
-                      repo: ref.read(habitRepositoryProvider),
-                      onRefresh: () => setState(() {}),
-                      l10n: l10n,
-                      theme: theme,
-                    ),
-                  ),
+                : scheduledHabits.isEmpty
+                    ? _buildNoScheduled(l10n, theme)
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        itemCount: scheduledHabits.length,
+                        itemBuilder: (ctx, i) => _HabitCard(
+                          habit: scheduledHabits[i],
+                          selectedDate: _selectedDate,
+                          repo: ref.read(habitRepositoryProvider),
+                          onRefresh: () => setState(() {}),
+                          l10n: l10n,
+                          theme: theme,
+                        ),
+                      ),
           ),
         ],
       ),
@@ -130,6 +133,28 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
     );
   }
 
+  Widget _buildNoScheduled(AppLocalizations l10n, ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event_available, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+          const Gap(12),
+          Text(l10n.noHabitsToday, style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          )),
+          const Gap(8),
+          Text(
+            '${ref.watch(habitsListProvider).length} ${l10n.habits.toLowerCase()}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddHabitSheet(BuildContext context, WidgetRef ref, AppLocalizations l10n, {Habit? existing}) {
     showModalBottomSheet(
       context: context,
@@ -188,7 +213,7 @@ class _HabitCard extends StatelessWidget {
                       Text(habit.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
                       const Gap(2),
                       Text(
-                        '$monthlyTotal / ${habit.monthlyTarget.toInt()} ${habit.unit}',
+                        '$monthlyTotal / ${habit.monthlyTarget.toInt()} ${habit.unit} · ${_frequencyLabel(habit, l10n)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.5),
                         ),
@@ -263,6 +288,21 @@ class _HabitCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _frequencyLabel(Habit habit, AppLocalizations l10n) {
+    switch (habit.frequency) {
+      case HabitFrequency.daily:
+        return l10n.everyDay.toLowerCase();
+      case HabitFrequency.weekly:
+        final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        final enDayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        final names = l10n.locale.languageCode == 'ru' ? dayNames : enDayNames;
+        final selected = habit.weekDays.map((d) => names[d - 1]).join(', ');
+        return selected;
+      case HabitFrequency.interval:
+        return '${l10n.interval.toLowerCase()} ${habit.intervalDays}';
+    }
   }
 
   void _showDetail(BuildContext context) {
@@ -492,7 +532,7 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
                     children: [
                       Text(h.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                       Text(
-                        '${h.monthlyTarget.toInt()} ${h.unit} / ${widget.l10n.month.toLowerCase()}',
+                        '${h.monthlyTarget.toInt()} ${h.unit} / ${widget.l10n.month.toLowerCase()} · ${_freqLabel(h, widget.l10n)}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.5),
                         ),
@@ -592,6 +632,20 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
         ),
       ),
     );
+  }
+
+  String _freqLabel(Habit h, AppLocalizations l10n) {
+    switch (h.frequency) {
+      case HabitFrequency.daily:
+        return l10n.everyDay.toLowerCase();
+      case HabitFrequency.weekly:
+        final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        final enDayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        final names = l10n.locale.languageCode == 'ru' ? dayNames : enDayNames;
+        return h.weekDays.map((d) => names[d - 1]).join(', ');
+      case HabitFrequency.interval:
+        return '${l10n.interval.toLowerCase()} ${h.intervalDays}';
+    }
   }
 
   void _showEditSheet(BuildContext context, Habit habit) {
@@ -771,6 +825,9 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
   late TextEditingController _unitCtrl;
   late String _icon;
   late bool _isBoolean;
+  late HabitFrequency _frequency;
+  late List<bool> _weekDays;
+  late TextEditingController _intervalCtrl;
 
   static const _icons = ['✅', '🏃', '💧', '📖', '🧘', '📵', '📝', '🗒', '⏰', '😴', '💪', '🍎', '🧠', '🎯', '💰', '🧘‍♂️', '🏋️', '🚴', '🎵', '🧹'];
 
@@ -783,6 +840,15 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
     _unitCtrl = TextEditingController(text: e?.unit ?? widget.l10n.unitDays);
     _icon = e?.icon ?? '✅';
     _isBoolean = e?.isBoolean ?? false;
+    _frequency = e?.frequency ?? HabitFrequency.daily;
+    _intervalCtrl = TextEditingController(text: (e?.intervalDays ?? 2).toString());
+    // weekDays: 1=Mon..7=Sun stored in Habit, _weekDays index 0=Mon..6=Sun
+    _weekDays = List.filled(7, false);
+    if (e?.weekDays != null) {
+      for (final wd in e!.weekDays) {
+        if (wd >= 1 && wd <= 7) _weekDays[wd - 1] = true;
+      }
+    }
   }
 
   @override
@@ -790,6 +856,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
     _nameCtrl.dispose();
     _targetCtrl.dispose();
     _unitCtrl.dispose();
+    _intervalCtrl.dispose();
     super.dispose();
   }
 
@@ -870,6 +937,71 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
               value: _isBoolean,
               onChanged: (v) => setState(() => _isBoolean = v),
             ),
+            const Gap(12),
+            Text(widget.l10n.frequency, style: theme.textTheme.labelMedium),
+            const Gap(6),
+            SegmentedButton<HabitFrequency>(
+              segments: [
+                ButtonSegment(
+                  value: HabitFrequency.daily,
+                  label: Text(widget.l10n.everyDay, style: const TextStyle(fontSize: 11)),
+                ),
+                ButtonSegment(
+                  value: HabitFrequency.weekly,
+                  label: Text(widget.l10n.specificDays, style: const TextStyle(fontSize: 11)),
+                ),
+                ButtonSegment(
+                  value: HabitFrequency.interval,
+                  label: Text(widget.l10n.everyNDays, style: const TextStyle(fontSize: 11)),
+                ),
+              ],
+              selected: {_frequency},
+              onSelectionChanged: (v) => setState(() => _frequency = v.first),
+            ),
+            if (_frequency == HabitFrequency.weekly) ...[
+              const Gap(8),
+              Text(widget.l10n.selectDays, style: theme.textTheme.labelSmall),
+              const Gap(4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(7, (i) {
+                  final dayLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+                  return GestureDetector(
+                    onTap: () => setState(() => _weekDays[i] = !_weekDays[i]),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _weekDays[i] ? AppColors.primary : theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _weekDays[i] ? AppColors.primary : theme.dividerColor,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          dayLabels[i],
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _weekDays[i] ? Colors.white : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+            if (_frequency == HabitFrequency.interval) ...[
+              const Gap(8),
+              TextField(
+                controller: _intervalCtrl,
+                decoration: InputDecoration(hintText: widget.l10n.interval),
+                keyboardType: TextInputType.number,
+              ),
+            ],
             const Gap(16),
             SizedBox(
               width: double.infinity,
@@ -889,6 +1021,11 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
     if (_nameCtrl.text.trim().isEmpty) return;
     final target = double.tryParse(_targetCtrl.text) ?? 20;
     final unit = _unitCtrl.text.trim().isEmpty ? widget.l10n.unitDays : _unitCtrl.text.trim();
+    final selectedWeekDays = <int>[];
+    for (int i = 0; i < 7; i++) {
+      if (_weekDays[i]) selectedWeekDays.add(i + 1);
+    }
+    final interval = int.tryParse(_intervalCtrl.text) ?? 2;
 
     final repo = HabitRepository();
     if (widget.existing != null) {
@@ -897,7 +1034,10 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
         ..icon = _icon
         ..monthlyTarget = target
         ..unit = unit
-        ..isBoolean = _isBoolean;
+        ..isBoolean = _isBoolean
+        ..frequencyIndex = _frequency.index
+        ..weekDays = selectedWeekDays
+        ..intervalDays = interval;
       await updated.save();
     } else {
       final habit = Habit(
@@ -907,6 +1047,10 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
         monthlyTarget: target,
         unit: unit,
         isBoolean: _isBoolean,
+        frequencyIndex: _frequency.index,
+        weekDays: selectedWeekDays,
+        intervalDays: interval,
+        startDate: DateTime.now(),
       );
       await repo.add(habit);
     }
