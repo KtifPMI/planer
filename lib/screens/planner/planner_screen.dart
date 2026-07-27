@@ -119,13 +119,30 @@ class PlannerScreen extends ConsumerWidget {
                             : null,
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () async {
-                        await ref.read(plannerRepositoryProvider).deleteGoal(plan.id, e.key);
-                        ref.invalidate(currentWeekProvider);
-                        ref.invalidate(weekAnalyticsProvider);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18),
+                          onPressed: () => _showEditDialog(
+                            context, ref, l10n, plan,
+                            initial: e.value.title,
+                            onSave: (val) async {
+                              await ref.read(plannerRepositoryProvider).editGoal(plan.id, e.key, val);
+                              ref.invalidate(currentWeekProvider);
+                              ref.invalidate(weekAnalyticsProvider);
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () async {
+                            await ref.read(plannerRepositoryProvider).deleteGoal(plan.id, e.key);
+                            ref.invalidate(currentWeekProvider);
+                            ref.invalidate(weekAnalyticsProvider);
+                          },
+                        ),
+                      ],
                     ),
                   )),
               ],
@@ -206,13 +223,30 @@ class PlannerScreen extends ConsumerWidget {
                             fontSize: 14,
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close, size: 16),
-                          onPressed: () async {
-                            await ref.read(plannerRepositoryProvider).deleteTask(plan.id, day, e.key);
-                            ref.invalidate(currentWeekProvider);
-                            ref.invalidate(weekAnalyticsProvider);
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, size: 16),
+                              onPressed: () => _showEditDialog(
+                                context, ref, l10n, plan,
+                                initial: e.value.title,
+                                onSave: (val) async {
+                                  await ref.read(plannerRepositoryProvider).editTask(plan.id, day, e.key, val);
+                                  ref.invalidate(currentWeekProvider);
+                                  ref.invalidate(weekAnalyticsProvider);
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () async {
+                                await ref.read(plannerRepositoryProvider).deleteTask(plan.id, day, e.key);
+                                ref.invalidate(currentWeekProvider);
+                                ref.invalidate(weekAnalyticsProvider);
+                              },
+                            ),
+                          ],
                         ),
                       )),
                       // Add task
@@ -224,13 +258,34 @@ class PlannerScreen extends ConsumerWidget {
                       // Note
                       if (dayPlan.note != null && dayPlan.note!.isNotEmpty) ...[
                         const Gap(8),
-                        Text(
-                          dayPlan.note!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        GestureDetector(
+                          onTap: () => _showEditDialog(
+                            context, ref, l10n, plan,
+                            initial: dayPlan.note!,
+                            title: l10n.editNote,
+                            onSave: (val) async {
+                              await ref.read(plannerRepositoryProvider).updateNote(plan.id, day, val);
+                              ref.invalidate(currentWeekProvider);
+                            },
+                          ),
+                          child: Text(
+                            dayPlan.note!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
                           ),
                         ),
                       ],
+                      TextButton.icon(
+                        onPressed: () => _showNoteDialog(context, ref, l10n, plan, day),
+                        icon: Icon(dayPlan.note != null && dayPlan.note!.isNotEmpty
+                            ? Icons.edit
+                            : Icons.add,
+                          size: 16),
+                        label: Text(dayPlan.note != null && dayPlan.note!.isNotEmpty
+                            ? l10n.editNote
+                            : l10n.addNote),
+                      ),
                     ],
                   ),
                 ),
@@ -317,6 +372,102 @@ class PlannerScreen extends ConsumerWidget {
                   await ref.read(plannerRepositoryProvider).addTask(plan.id, day, controller.text);
                   ref.invalidate(currentWeekProvider);
                   ref.invalidate(weekAnalyticsProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Text(l10n.save),
+              ),
+            ),
+            const Gap(20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, WeeklyPlan plan, {
+    required String initial,
+    String? title,
+    required Future<void> Function(String) onSave,
+  }) {
+    final controller = TextEditingController(text: initial);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title ?? l10n.edit, style: Theme.of(ctx).textTheme.titleLarge),
+            const Gap(16),
+            TextField(controller: controller, autofocus: true),
+            const Gap(20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  if (controller.text.isEmpty) return;
+                  await onSave(controller.text);
+                  ref.invalidate(currentWeekProvider);
+                  ref.invalidate(weekAnalyticsProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Text(l10n.save),
+              ),
+            ),
+            const Gap(20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNoteDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, WeeklyPlan plan, DateTime day) {
+    final dayKey = _dateKey(day);
+    final dayPlan = plan.days[dayKey] ?? DayPlan();
+    final controller = TextEditingController(text: dayPlan.note ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.dayNotes, style: Theme.of(ctx).textTheme.titleLarge),
+            const Gap(16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 3,
+              decoration: InputDecoration(hintText: l10n.note),
+            ),
+            const Gap(20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final text = controller.text.trim();
+                  await ref.read(plannerRepositoryProvider).updateNote(
+                    plan.id, day, text.isEmpty ? null : text,
+                  );
+                  ref.invalidate(currentWeekProvider);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: Text(l10n.save),

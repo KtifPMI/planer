@@ -111,6 +111,26 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               subtitle: Text(
                 '${app_date.formatDate(w.date)} • ${w.exercises.length} ${l10n.exercise.toLowerCase()}',
               ),
+              trailing: IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l10n.confirmDelete),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await ref.read(workoutRepositoryProvider).deleteSession(w.id);
+                    ref.invalidate(allWorkoutsProvider);
+                    ref.invalidate(workoutCountThisMonthProvider);
+                  }
+                },
+              ),
             ),
           )),
         ],
@@ -449,7 +469,7 @@ class _SetRowState extends State<_SetRow> {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'кг',
+                  hintText: AppLocalizations.of(context).kg,
                   contentPadding: EdgeInsets.zero,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                   isDense: true,

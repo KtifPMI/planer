@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import '../localization/app_localizations.dart';
 
 class UpdateInfo {
   final String version;
@@ -146,7 +147,7 @@ class UpdateService {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('APK скачан, установка...')),
+        SnackBar(content: Text(l10n.apkDownloaded)),
       );
     }
 
@@ -159,15 +160,17 @@ class UpdateService {
 
     if (!update.hasUpdate) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('У вас последняя версия (${update.currentVersion})')),
+        SnackBar(content: Text('${AppLocalizations.of(context).latestVersion} (${update.currentVersion})')),
       );
       return;
     }
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Доступно обновление'),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+        title: Text(l10n.updateTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,34 +193,35 @@ class UpdateService {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Позже'),
+            child: Text(l10n.later),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               _downloadWithProgress(context, update.downloadUrl);
             },
-            child: const Text('Обновить'),
+            child: Text(l10n.updateNow),
           ),
         ],
-      ),
+      );},
     );
   }
 
   static void _downloadWithProgress(BuildContext context, String url) async {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Скачивание обновления...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(l10n.downloading),
               ],
             ),
           ),
@@ -229,8 +233,8 @@ class UpdateService {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ошибка скачивания'),
+          SnackBar(
+            content: Text(l10n.downloadError),
             backgroundColor: Colors.red,
           ),
         );

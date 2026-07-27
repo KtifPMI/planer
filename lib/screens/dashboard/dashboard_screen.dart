@@ -12,6 +12,7 @@ import '../../providers/workout_providers.dart';
 import '../../providers/planner_providers.dart';
 import '../../providers/nutrition_providers.dart';
 import '../../providers/recipe_providers.dart';
+import '../../core/services/update_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -21,15 +22,21 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _initialized = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    ref.invalidate(todayStatsProvider);
-    ref.invalidate(monthIncomeProvider);
-    ref.invalidate(monthExpenseProvider);
-    ref.invalidate(workoutCountThisMonthProvider);
-    ref.invalidate(weekAnalyticsProvider);
-    ref.invalidate(todayNutritionTotalsProvider);
+    if (!_initialized) {
+      _initialized = true;
+      ref.invalidate(todayStatsProvider);
+      ref.invalidate(monthIncomeProvider);
+      ref.invalidate(monthExpenseProvider);
+      ref.invalidate(workoutCountThisMonthProvider);
+      ref.invalidate(weekAnalyticsProvider);
+      ref.invalidate(todayNutritionTotalsProvider);
+      try { UpdateService.checkAndShow(context); } catch (_) {}
+    }
   }
 
   @override
@@ -255,11 +262,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildDashProgressRow(String label, double current, double target, double pct, Color color) {
+    final exceeded = target > 0 && current > target;
     return Row(
       children: [
         SizedBox(
           width: 20,
-          child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+          child: Text(label, style: TextStyle(color: exceeded ? Colors.red : color, fontWeight: FontWeight.bold, fontSize: 14)),
         ),
         Expanded(
           child: ClipRRect(
@@ -267,7 +275,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: LinearProgressIndicator(
               value: pct,
               backgroundColor: color.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation(pct > 1.0 ? Colors.red : color),
+              valueColor: AlwaysStoppedAnimation(exceeded ? Colors.red : color),
               minHeight: 6,
             ),
           ),
@@ -278,7 +286,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Text(
             '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}',
             textAlign: TextAlign.right,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: pct > 1.0 ? Colors.red : null),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: exceeded ? Colors.red : null),
           ),
         ),
       ],

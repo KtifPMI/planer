@@ -167,9 +167,8 @@ class _HabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final todayValue = repo.getValueForDate(habit.id, selectedDate);
-    final now = DateTime.now();
-    final monthlyTotal = repo.getMonthlyTotal(habit.id, now.year, now.month);
-    final monthlyProgress = repo.getMonthlyProgress(habit.id, now.year, now.month, habit.monthlyTarget);
+    final monthlyTotal = repo.getMonthlyTotal(habit.id, selectedDate.year, selectedDate.month);
+    final monthlyProgress = repo.getMonthlyProgress(habit.id, selectedDate.year, selectedDate.month, habit.monthlyTarget);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -513,7 +512,7 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _StatItem(label: widget.l10n.month, value: '${monthlyTotal.toInt()} ${h.unit}'),
-                        _StatItem(label: widget.l10n.completed, value: '$daysDone дн.'),
+                        _StatItem(label: widget.l10n.completed, value: '$daysDone ${widget.l10n.daysShort}'),
                         _StatItem(
                           label: widget.l10n.progress,
                           value: '${(monthlyProgress * 100).toStringAsFixed(0)}%',
@@ -667,7 +666,7 @@ class _MonthCalendar extends StatelessWidget {
     final today = DateTime.now();
 
     final cells = <Widget>[];
-    for (final d in ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']) {
+    for (final d in l10n.shortDays.split('|')) {
       cells.add(Center(
         child: Text(d, style: theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSurface.withOpacity(0.4),
@@ -863,7 +862,7 @@ class _HabitEditSheetState extends State<_HabitEditSheet> {
               contentPadding: EdgeInsets.zero,
               title: Text(widget.l10n.booleanHabit),
               subtitle: Text(
-                'Да/Нет вместо числового значения',
+                widget.l10n.booleanHabitDesc,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.5),
                 ),

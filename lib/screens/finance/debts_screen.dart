@@ -84,7 +84,7 @@ class DebtsScreen extends ConsumerWidget {
               ),
               trailing: PopupMenuButton(
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'pay', child: Text('Оплатить')),
+                   PopupMenuItem(value: 'pay', child: Text(AppLocalizations.of(context).pay)),
                   PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
                 ],
                 onSelected: (v) async {

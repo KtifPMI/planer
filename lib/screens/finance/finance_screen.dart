@@ -154,12 +154,47 @@ class FinanceScreen extends ConsumerWidget {
               leading: Text(cat?.icon ?? '📁', style: const TextStyle(fontSize: 24)),
               title: Text(cat?.name ?? t.categoryId),
               subtitle: t.note != null ? Text(t.note!) : null,
-              trailing: Text(
-                '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toStringAsFixed(0)} ₽',
-                style: TextStyle(
-                  color: t.type == TransactionType.income ? AppColors.income : AppColors.expense,
-                  fontWeight: FontWeight.w600,
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toStringAsFixed(0)} ₽',
+                    style: TextStyle(
+                      color: t.type == TransactionType.income ? AppColors.income : AppColors.expense,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        _showEditTransactionDialog(context, ref, l10n, t);
+                      } else if (value == 'delete') {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(l10n.confirmDelete),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref.read(financeRepositoryProvider).deleteTransaction(t.id);
+                          ref.invalidate(monthTransactionsProvider);
+                          ref.invalidate(monthIncomeProvider);
+                          ref.invalidate(monthExpenseProvider);
+                          ref.invalidate(monthBalanceProvider);
+                          ref.invalidate(expensesByCategoryProvider);
+                        }
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                      PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
@@ -315,6 +350,92 @@ class FinanceScreen extends ConsumerWidget {
                       note: noteController.text.isEmpty ? null : noteController.text,
                     );
                     await ref.read(financeRepositoryProvider).addTransaction(transaction);
+                    ref.invalidate(monthTransactionsProvider);
+                    ref.invalidate(monthIncomeProvider);
+                    ref.invalidate(monthExpenseProvider);
+                    ref.invalidate(monthBalanceProvider);
+                    ref.invalidate(expensesByCategoryProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(l10n.save),
+                ),
+              ),
+              const Gap(20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditTransactionDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    Transaction t,
+  ) {
+    final amountController = TextEditingController(text: t.amount.toStringAsFixed(0));
+    final noteController = TextEditingController(text: t.note ?? '');
+    String selectedCategoryId = t.categoryId;
+    final categories = ref.read(
+      t.type == TransactionType.income ? incomeCategoriesProvider : expenseCategoriesProvider,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.editTransaction, style: Theme.of(ctx).textTheme.titleLarge),
+              const Gap(16),
+              TextField(
+                controller: amountController,
+                decoration: const InputDecoration(hintText: '0'),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              const Gap(12),
+              DropdownButtonFormField<String>(
+                value: selectedCategoryId,
+                decoration: InputDecoration(hintText: l10n.category),
+                items: categories.map((c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text('${c.icon} ${c.name}'),
+                )).toList(),
+                onChanged: (v) => setModalState(() => selectedCategoryId = v!),
+              ),
+              const Gap(12),
+              TextField(
+                controller: noteController,
+                decoration: InputDecoration(hintText: l10n.note),
+              ),
+              const Gap(20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    final amount = double.tryParse(amountController.text);
+                    if (amount == null) return;
+                    final updated = Transaction(
+                      id: t.id,
+                      amount: amount,
+                      categoryId: selectedCategoryId,
+                      type: t.type,
+                      date: t.date,
+                      note: noteController.text.isEmpty ? null : noteController.text,
+                    );
+                    await ref.read(financeRepositoryProvider).updateTransaction(updated);
                     ref.invalidate(monthTransactionsProvider);
                     ref.invalidate(monthIncomeProvider);
                     ref.invalidate(monthExpenseProvider);

@@ -96,6 +96,23 @@ class PlannerRepository {
     await plan.save();
   }
 
+  Future<void> editTask(String planId, DateTime date, int taskIndex, String newTitle) async {
+    final plan = _box.get(planId);
+    if (plan == null) return;
+    final key = _dateKey(date);
+    final dayPlan = plan.days[key];
+    if (dayPlan == null || taskIndex >= dayPlan.tasks.length) return;
+    dayPlan.tasks[taskIndex].title = newTitle;
+    await plan.save();
+  }
+
+  Future<void> editGoal(String planId, int goalIndex, String newTitle) async {
+    final plan = _box.get(planId);
+    if (plan == null || goalIndex >= plan.goals.length) return;
+    plan.goals[goalIndex].title = newTitle;
+    await plan.save();
+  }
+
   // Notes
   Future<void> updateNote(String planId, DateTime date, String? note) async {
     final plan = _box.get(planId);

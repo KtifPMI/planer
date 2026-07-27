@@ -135,11 +135,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
   Widget _buildProgressRow(String label, double current, double target, Color color, AppLocalizations l10n) {
     final pct = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    final exceeded = target > 0 && current > target;
     return Row(
       children: [
         SizedBox(
           width: 24,
-          child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          child: Text(label, style: TextStyle(color: exceeded ? Colors.red : color, fontWeight: FontWeight.bold, fontSize: 16)),
         ),
         Expanded(
           child: ClipRRect(
@@ -147,7 +148,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             child: LinearProgressIndicator(
               value: pct,
               backgroundColor: color.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation(color),
+              valueColor: AlwaysStoppedAnimation(exceeded ? Colors.red : color),
               minHeight: 8,
             ),
           ),
@@ -158,7 +159,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           child: Text(
             '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} г',
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: exceeded ? Colors.red : null),
           ),
         ),
       ],
@@ -234,9 +235,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
           children: [
             if (entries.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Нет записей', style: TextStyle(color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.noEntries, style: const TextStyle(color: Colors.grey)),
               )
             else
               ...entries.map((e) => ListTile(
@@ -306,7 +307,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
+        builder: (ctx, setSheetState) {
+          final g = double.tryParse(gramsController.text) ?? recipe.totalGrams;
+          final f = recipe.totalGrams > 0 ? g / recipe.totalGrams : 1;
+          return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
             left: 20, right: 20, top: 20,
@@ -320,22 +324,16 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               TextField(
                 controller: gramsController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Вес порции (г)', suffixText: 'г'),
+                decoration: InputDecoration(hintText: l10n.portionWeight, suffixText: 'г'),
                 onChanged: (_) => setSheetState(() {}),
               ),
               const Gap(8),
-              Builder(
-                builder: (_) {
-                  final g = double.tryParse(gramsController.text) ?? recipe.totalGrams;
-                  final f = recipe.totalGrams > 0 ? g / recipe.totalGrams : 1;
-                  return Text(
-                    '${(recipe.sumCalories * f).toStringAsFixed(0)} ккал · '
-                    'Б${(recipe.sumProtein * f).toStringAsFixed(0)} '
-                    'Ж${(recipe.sumFat * f).toStringAsFixed(0)} '
-                    'У${(recipe.sumCarbs * f).toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
-                  );
-                },
+              Text(
+                '${(recipe.sumCalories * f).toStringAsFixed(0)} ккал · '
+                'Б${(recipe.sumProtein * f).toStringAsFixed(0)} '
+                'Ж${(recipe.sumFat * f).toStringAsFixed(0)} '
+                'У${(recipe.sumCarbs * f).toStringAsFixed(0)}',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const Gap(12),
               DropdownButtonFormField<MealType>(
@@ -379,7 +377,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               const Gap(20),
             ],
           ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -413,10 +412,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
           children: [
             if (recipes.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Нет рецептов', style: TextStyle(color: Colors.grey)),
-              )
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(l10n.noRecipes, style: const TextStyle(color: Colors.grey)),
+                )
             else
               ...recipes.map((r) => ListTile(
                     title: Text(r.name),
@@ -481,6 +480,18 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
   final _searchController = TextEditingController();
 
   Recipe? _selectedRecipe;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _gramsController.dispose();
+    _caloriesController.dispose();
+    _proteinController.dispose();
+    _fatController.dispose();
+    _carbsController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -580,7 +591,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
             const Gap(12),
             TextField(
               controller: _gramsController,
-              decoration: const InputDecoration(hintText: 'Граммы'),
+              decoration: InputDecoration(hintText: l10n.gramsHint),
               keyboardType: TextInputType.number,
               onChanged: (_) {
                 setState(() {});
@@ -593,7 +604,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
                 Expanded(
                   child: TextField(
                     controller: _caloriesController,
-                    decoration: const InputDecoration(hintText: 'Ккал'),
+                     decoration: InputDecoration(hintText: l10n.caloriesHint),
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -641,16 +652,14 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
   }
 
   Widget _buildMiniProgress(Map<String, double> totals, NutritionTargets targets, AppLocalizations l10n) {
-    final grams = double.tryParse(_gramsController.text) ?? 100;
-    final factor = grams / 100;
-    final entryCal = (double.tryParse(_caloriesController.text) ?? 0) * factor;
-    final entryProt = (double.tryParse(_proteinController.text) ?? 0) * factor;
-    final entryFat = (double.tryParse(_fatController.text) ?? 0) * factor;
-    final entryCarbs = (double.tryParse(_carbsController.text) ?? 0) * factor;
+    final entryCal = double.tryParse(_caloriesController.text) ?? 0;
+    final entryProt = double.tryParse(_proteinController.text) ?? 0;
+    final entryFat = double.tryParse(_fatController.text) ?? 0;
+    final entryCarbs = double.tryParse(_carbsController.text) ?? 0;
 
     return Column(
       children: [
-        _buildMiniRow('Ккал', totals['calories']! + entryCal, targets.calories, const Color(0xFF9B59B6)),
+        _buildMiniRow(l10n.caloriesShort, totals['calories']! + entryCal, targets.calories, const Color(0xFF9B59B6)),
         _buildMiniRow('Б', totals['protein']! + entryProt, targets.protein, const Color(0xFFFF6B6B)),
         _buildMiniRow('Ж', totals['fat']! + entryFat, targets.fat, const Color(0xFFFFE066)),
         _buildMiniRow('У', totals['carbs']! + entryCarbs, targets.carbs, const Color(0xFF4ECDC4)),
@@ -820,7 +829,7 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.isNotFound
-                ? 'Продукт не найден. Введите данные вручную.'
+                ? AppLocalizations.of(context).productNotFound
                 : e.message),
             duration: const Duration(seconds: 3),
           ),
@@ -878,6 +887,19 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
   final _cfProtController = TextEditingController();
   final _cfFatController = TextEditingController();
   final _cfCarbsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _totalGramsController.dispose();
+    _searchController.dispose();
+    _cfNameController.dispose();
+    _cfCalController.dispose();
+    _cfProtController.dispose();
+    _cfFatController.dispose();
+    _cfCarbsController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1116,6 +1138,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
 
   void _addIngredientFromFood(FoodItem food) {
     final controller = TextEditingController(text: '100');
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1124,10 +1147,10 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
           controller: controller,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Граммы', suffixText: 'г'),
+          decoration: InputDecoration(hintText: l10n.gramsHint, suffixText: 'г'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
           FilledButton(
             onPressed: () {
               final grams = double.tryParse(controller.text) ?? 100;
@@ -1146,7 +1169,7 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
               setState(() {});
               Navigator.pop(ctx);
             },
-            child: const Text('Добавить'),
+            child: Text(l10n.add),
           ),
         ],
       ),
@@ -1175,8 +1198,9 @@ class _BarcodeScannerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Сканирование штрихкода')),
+      appBar: AppBar(title: Text(l10n.barcodeScanner)),
       body: MobileScanner(
         onDetect: (capture) {
           final barcode = capture.barcodes.first.rawValue;

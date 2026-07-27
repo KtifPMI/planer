@@ -160,6 +160,42 @@ class AppLocalizations {
       'recipeTotalGramsHint': 'суммарная масса блюд',
       'createCustomFood': 'Создать продукт',
       'saved': 'сохранён',
+      'noEntries': 'Нет записей',
+      'noRecipes': 'Нет рецептов',
+      'kg': 'кг',
+      'repsShort': 'повт.',
+      'daysShort': 'дн.',
+      'booleanHabitDesc': 'Да/Нет вместо числового значения',
+      'barcodeScanner': 'Сканирование штрихкода',
+      'productNotFound': 'Продукт не найден. Введите данные вручную.',
+      'downloading': 'Скачивание обновления...',
+      'downloadError': 'Ошибка скачивания',
+      'latestVersion': 'У вас последная версия',
+      'updateTitle': 'Доступно обновление',
+      'later': 'Позже',
+      'updateNow': 'Обновить',
+      'apkDownloaded': 'APK скачан, установка...',
+      'gramsHint': 'Граммы',
+      'portionWeight': 'Вес порции (г)',
+      'portionPreview': 'ккал · Б',
+      'addAsMeal': 'Добавить как блюдо',
+      'confirmDelete': 'Удалить?',
+      'dayNotes': 'Заметки дня',
+      'editTask': 'Редактировать задачу',
+      'addNote': 'Добавить заметку',
+      'editNote': 'Редактировать заметку',
+      'removeDone': 'Удалить выполненные',
+      'perMonth': 'в месяц',
+      'editTransaction': 'Редактировать транзакцию',
+      'deleteTransaction': 'Удалить транзакцию?',
+      'deleteWorkout': 'Удалить тренировку?',
+      'weekProgress': 'Прогресс недели',
+      'dayMon': 'Понедельник', 'dayTue': 'Вторник', 'dayWed': 'Среда',
+      'dayThu': 'Четверг', 'dayFri': 'Пятница', 'daySat': 'Суббота', 'daySun': 'Воскресенье',
+      'shortDays': 'Вс|Пн|Вт|Ср|Чт|Пт|Сб',
+      'caloriesShort': 'Ккал',
+      'caloriesHint': 'Ккал',
+      'pay': 'Оплатить',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -309,6 +345,42 @@ class AppLocalizations {
       'recipeTotalGramsHint': 'total weight of all ingredients',
       'createCustomFood': 'Create food item',
       'saved': 'saved',
+      'noEntries': 'No entries',
+      'noRecipes': 'No recipes',
+      'kg': 'kg',
+      'repsShort': 'reps',
+      'daysShort': 'days',
+      'booleanHabitDesc': 'Yes / No instead of numeric value',
+      'barcodeScanner': 'Scan barcode',
+      'productNotFound': 'Product not found. Enter data manually.',
+      'downloading': 'Downloading update...',
+      'downloadError': 'Download error',
+      'latestVersion': 'You have the latest version',
+      'updateTitle': 'Update available',
+      'later': 'Later',
+      'updateNow': 'Update',
+      'apkDownloaded': 'APK downloaded, installing...',
+      'gramsHint': 'Grams',
+      'portionWeight': 'Portion weight (g)',
+      'portionPreview': 'kcal · P',
+      'addAsMeal': 'Add as meal',
+      'confirmDelete': 'Delete?',
+      'dayNotes': 'Day notes',
+      'editTask': 'Edit task',
+      'addNote': 'Add note',
+      'editNote': 'Edit note',
+      'removeDone': 'Remove completed',
+      'perMonth': 'per month',
+      'editTransaction': 'Edit transaction',
+      'deleteTransaction': 'Delete transaction?',
+      'deleteWorkout': 'Delete workout?',
+      'weekProgress': 'Week progress',
+      'dayMon': 'Monday', 'dayTue': 'Tuesday', 'dayWed': 'Wednesday',
+      'dayThu': 'Thursday', 'dayFri': 'Friday', 'daySat': 'Saturday', 'daySun': 'Sunday',
+      'shortDays': 'Su|Mo|Tu|We|Th|Fr|Sa',
+      'caloriesShort': 'Kcal',
+      'caloriesHint': 'Kcal',
+      'pay': 'Pay',
     },
   };
 
@@ -449,6 +521,39 @@ class AppLocalizations {
   String get recipeTotalGramsHint => _t('recipeTotalGramsHint');
   String get createCustomFood => _t('createCustomFood');
   String get saved => _t('saved');
+  String get noEntries => _t('noEntries');
+  String get noRecipes => _t('noRecipes');
+  String get kg => _t('kg');
+  String get repsShort => _t('repsShort');
+  String get daysShort => _t('daysShort');
+  String get booleanHabitDesc => _t('booleanHabitDesc');
+  String get barcodeScanner => _t('barcodeScanner');
+  String get productNotFound => _t('productNotFound');
+  String get downloading => _t('downloading');
+  String get downloadError => _t('downloadError');
+  String get latestVersion => _t('latestVersion');
+  String get updateTitle => _t('updateTitle');
+  String get later => _t('later');
+  String get updateNow => _t('updateNow');
+  String get apkDownloaded => _t('apkDownloaded');
+  String get gramsHint => _t('gramsHint');
+  String get portionWeight => _t('portionWeight');
+  String get portionPreview => _t('portionPreview');
+  String get addAsMeal => _t('addAsMeal');
+  String get confirmDelete => _t('confirmDelete');
+  String get editTask => _t('editTask');
+  String get addNote => _t('addNote');
+  String get editNote => _t('editNote');
+  String get removeDone => _t('removeDone');
+  String get perMonth => _t('perMonth');
+  String get editTransaction => _t('editTransaction');
+  String get deleteTransaction => _t('deleteTransaction');
+  String get deleteWorkout => _t('deleteWorkout');
+  String get weekProgress => _t('weekProgress');
+  String get shortDays => _t('shortDays');
+  String get caloriesShort => _t('caloriesShort');
+  String get caloriesHint => _t('caloriesHint');
+  String get pay => _t('pay');
 
   String monthName(int month) {
     const months = [
@@ -464,13 +569,8 @@ class AppLocalizations {
   }
 
   String dayNameFull(int weekday) {
-    const days = [
-      'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье',
-    ];
-    const daysEn = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
-    ];
-    return locale.languageCode == 'ru' ? days[weekday - 1] : daysEn[weekday - 1];
+    const keys = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'];
+    return _t(keys[weekday - 1]);
   }
 }
 
