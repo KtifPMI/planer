@@ -294,6 +294,108 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     );
   }
 
+  void _showAddRecipeAsMealDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, Recipe recipe) {
+    final gramsController = TextEditingController(text: recipe.totalGrams.toStringAsFixed(0));
+
+    MealType selectedMeal = MealType.breakfast;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(recipe.name, style: Theme.of(ctx).textTheme.titleLarge),
+              const Gap(12),
+              TextField(
+                controller: gramsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(hintText: 'Вес порции (г)', suffixText: 'г'),
+                onChanged: (_) => setSheetState(() {}),
+              ),
+              const Gap(8),
+              Builder(
+                builder: (_) {
+                  final g = double.tryParse(gramsController.text) ?? recipe.totalGrams;
+                  final f = recipe.totalGrams > 0 ? g / recipe.totalGrams : 1;
+                  return Text(
+                    '${(recipe.sumCalories * f).toStringAsFixed(0)} ккал · '
+                    'Б${(recipe.sumProtein * f).toStringAsFixed(0)} '
+                    'Ж${(recipe.sumFat * f).toStringAsFixed(0)} '
+                    'У${(recipe.sumCarbs * f).toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  );
+                },
+              ),
+              const Gap(12),
+              DropdownButtonFormField<MealType>(
+                value: selectedMeal,
+                isExpanded: true,
+                items: MealType.values.map((m) => DropdownMenuItem(
+                  value: m,
+                  child: Text(_mealTypeName(m, l10n)),
+                )).toList(),
+                onChanged: (v) => setSheetState(() => selectedMeal = v ?? selectedMeal),
+              ),
+              const Gap(16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    final grams = double.tryParse(gramsController.text) ?? recipe.totalGrams;
+                    final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : 1;
+                    final date = ref.read(selectedNutritionDateProvider);
+
+                    final entry = MealEntry(
+                      id: NutritionRepository.generateId(),
+                      foodName: recipe.name,
+                      mealType: selectedMeal,
+                      grams: grams,
+                      calories: recipe.sumCalories * factor,
+                      protein: recipe.sumProtein * factor,
+                      fat: recipe.sumFat * factor,
+                      carbs: recipe.sumCarbs * factor,
+                      date: DateTime(date.year, date.month, date.day),
+                    );
+
+                    await ref.read(nutritionRepositoryProvider).addEntry(entry);
+                    ref.invalidate(todayMealEntriesProvider);
+                    ref.invalidate(todayNutritionTotalsProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(l10n.save),
+                ),
+              ),
+              const Gap(20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _mealTypeName(MealType m, AppLocalizations l10n) {
+    switch (m) {
+      case MealType.breakfast: return l10n.breakfast;
+      case MealType.secondBreakfast: return l10n.secondBreakfast;
+      case MealType.lunch: return l10n.lunch;
+      case MealType.afternoonSnack: return l10n.afternoonSnack;
+      case MealType.dinner: return l10n.dinner;
+      case MealType.snack: return l10n.snack;
+      case MealType.eveningSnack: return l10n.eveningSnack;
+    }
+  }
+
   Widget _buildRecipesSection(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     final recipes = ref.watch(recipesListProvider);
     final theme = Theme.of(context);
@@ -322,12 +424,22 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                       '${r.totalGrams.toStringAsFixed(0)} г · ${r.sumCalories.toStringAsFixed(0)} ккал · Б${r.sumProtein.toStringAsFixed(0)} Ж${r.sumFat.toStringAsFixed(0)} У${r.sumCarbs.toStringAsFixed(0)}',
                       style: const TextStyle(fontSize: 12),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18),
-                      onPressed: () async {
-                        await ref.read(recipeRepositoryProvider).delete(r.id);
-                        refreshRecipes(ref);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.restaurant, size: 18),
+                          tooltip: l10n.addFood,
+                          onPressed: () => _showAddRecipeAsMealDialog(context, ref, l10n, r),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          onPressed: () async {
+                            await ref.read(recipeRepositoryProvider).delete(r.id);
+                            refreshRecipes(ref);
+                          },
+                        ),
+                      ],
                     ),
                   )),
             const Divider(height: 1),
@@ -425,6 +537,9 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
               onChanged: (v) {
                 setState(() {});
                 ref.read(foodSearchQueryProvider.notifier).state = v;
+                if (v.isNotEmpty && _selectedRecipe != null) {
+                  setState(() => _selectedRecipe = null);
+                }
               },
             ),
             const Gap(8),
@@ -467,7 +582,10 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
               controller: _gramsController,
               decoration: const InputDecoration(hintText: 'Граммы'),
               keyboardType: TextInputType.number,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                setState(() {});
+                if (_selectedRecipe != null) _recalcFromRecipe();
+              },
             ),
             const Gap(12),
             Row(
@@ -614,28 +732,50 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
     final recipes = ref.watch(recipesListProvider);
     if (recipes.isEmpty) return const SizedBox.shrink();
 
-    return DropdownButtonFormField<Recipe>(
-      value: _selectedRecipe,
-      hint: Text(l10n.selectRecipe),
-      isExpanded: true,
-      items: recipes.map((r) => DropdownMenuItem(
-        value: r,
-        child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      )).toList(),
-      onChanged: (recipe) {
-        setState(() {
-          _selectedRecipe = recipe;
-          if (recipe != null) {
-            _nameController.text = recipe.name;
-            final grams = double.tryParse(_gramsController.text) ?? 100;
-            final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : grams / 100;
-            _caloriesController.text = (recipe.sumCalories * factor).toStringAsFixed(0);
-            _proteinController.text = (recipe.sumProtein * factor).toStringAsFixed(1);
-            _fatController.text = (recipe.sumFat * factor).toStringAsFixed(1);
-            _carbsController.text = (recipe.sumCarbs * factor).toStringAsFixed(1);
-          }
-        });
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Recipe>(
+            value: _selectedRecipe,
+            hint: Text(l10n.selectRecipe),
+            isExpanded: true,
+            items: recipes.map((r) => DropdownMenuItem(
+              value: r,
+              child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+            )).toList(),
+            onChanged: (recipe) {
+              setState(() {
+                _selectedRecipe = recipe;
+                if (recipe != null) {
+                  _nameController.text = recipe.name;
+                  final grams = double.tryParse(_gramsController.text) ?? 100;
+                  final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : grams / 100;
+                  _caloriesController.text = (recipe.sumCalories * factor).toStringAsFixed(0);
+                  _proteinController.text = (recipe.sumProtein * factor).toStringAsFixed(1);
+                  _fatController.text = (recipe.sumFat * factor).toStringAsFixed(1);
+                  _carbsController.text = (recipe.sumCarbs * factor).toStringAsFixed(1);
+                }
+              });
+            },
+          ),
+        ),
+        if (_selectedRecipe != null) ...[
+          const Gap(8),
+          IconButton(
+            icon: const Icon(Icons.clear, size: 20),
+            onPressed: () {
+              setState(() {
+                _selectedRecipe = null;
+                _nameController.clear();
+                _caloriesController.clear();
+                _proteinController.clear();
+                _fatController.clear();
+                _carbsController.clear();
+              });
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -649,7 +789,18 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
     _carbsController.text = (food.carbs * factor).toStringAsFixed(1);
     _searchController.clear();
     ref.read(foodSearchQueryProvider.notifier).state = '';
-    setState(() {});
+    setState(() => _selectedRecipe = null);
+  }
+
+  void _recalcFromRecipe() {
+    final recipe = _selectedRecipe;
+    if (recipe == null) return;
+    final grams = double.tryParse(_gramsController.text) ?? 100;
+    final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : grams / 100;
+    _caloriesController.text = (recipe.sumCalories * factor).toStringAsFixed(0);
+    _proteinController.text = (recipe.sumProtein * factor).toStringAsFixed(1);
+    _fatController.text = (recipe.sumFat * factor).toStringAsFixed(1);
+    _carbsController.text = (recipe.sumCarbs * factor).toStringAsFixed(1);
   }
 
   void _scanBarcode(BuildContext context) async {
@@ -964,18 +1115,42 @@ class _RecipeFormScreenState extends ConsumerState<RecipeFormScreen> {
   }
 
   void _addIngredientFromFood(FoodItem food) {
-    _searchController.clear();
-    ref.read(foodSearchQueryProvider.notifier).state = '';
-    _ingredients.add(RecipeIngredient(
-      foodName: food.name,
-      grams: 100,
-      calories: food.calories,
-      protein: food.protein,
-      fat: food.fat,
-      carbs: food.carbs,
-      barcode: food.barcode,
-    ));
-    setState(() {});
+    final controller = TextEditingController(text: '100');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(food.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Граммы', suffixText: 'г'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
+          FilledButton(
+            onPressed: () {
+              final grams = double.tryParse(controller.text) ?? 100;
+              final factor = grams / 100;
+              _searchController.clear();
+              ref.read(foodSearchQueryProvider.notifier).state = '';
+              _ingredients.add(RecipeIngredient(
+                foodName: food.name,
+                grams: grams,
+                calories: food.calories * factor,
+                protein: food.protein * factor,
+                fat: food.fat * factor,
+                carbs: food.carbs * factor,
+                barcode: food.barcode,
+              ));
+              setState(() {});
+              Navigator.pop(ctx);
+            },
+            child: const Text('Добавить'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _saveRecipe() async {

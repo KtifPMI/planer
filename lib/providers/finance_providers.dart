@@ -65,11 +65,13 @@ final allSavingsProvider = Provider<List<SavingsGoal>>((ref) {
 });
 
 final totalSavedProvider = Provider<double>((ref) {
-  return ref.watch(financeRepositoryProvider).totalSaved;
+  final savings = ref.watch(allSavingsProvider);
+  return savings.fold(0, (s, g) => s + g.currentAmount);
 });
 
 final totalTargetProvider = Provider<double>((ref) {
-  return ref.watch(financeRepositoryProvider).totalTarget;
+  final savings = ref.watch(allSavingsProvider);
+  return savings.fold(0, (s, g) => s + g.targetAmount);
 });
 
 // Debts
@@ -82,11 +84,13 @@ final activeDebtsProvider = Provider<List<Debt>>((ref) {
 });
 
 final totalDebtProvider = Provider<double>((ref) {
-  return ref.watch(financeRepositoryProvider).totalDebt;
+  final debts = ref.watch(allDebtsProvider);
+  return debts.fold(0, (s, d) => s + d.remaining);
 });
 
 final totalPaidProvider = Provider<double>((ref) {
-  return ref.watch(financeRepositoryProvider).totalPaid;
+  final debts = ref.watch(allDebtsProvider);
+  return debts.fold(0, (s, d) => s + d.paidAmount);
 });
 
 // Plan/Fact
