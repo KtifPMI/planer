@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -584,20 +585,31 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
             ),
 
             const Gap(12),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(hintText: l10n.foodName),
-            ),
+            if (_selectedRecipe == null)
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(hintText: l10n.foodName),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primary, width: 1.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _nameController.text,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
             const Gap(12),
-            TextField(
-              controller: _gramsController,
-              decoration: InputDecoration(hintText: l10n.gramsHint),
-              keyboardType: TextInputType.number,
-              onChanged: (_) {
-                setState(() {});
-                if (_selectedRecipe != null) _recalcFromRecipe();
-              },
-            ),
+            if (_selectedRecipe == null)
+              TextField(
+                controller: _gramsController,
+                decoration: InputDecoration(hintText: l10n.gramsHint),
+                keyboardType: TextInputType.number,
+              ),
             const Gap(12),
             Row(
               children: [
@@ -740,47 +752,148 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
     final recipes = ref.watch(recipesListProvider);
     if (recipes.isEmpty) return const SizedBox.shrink();
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: DropdownButtonFormField<Recipe>(
-            value: _selectedRecipe,
-            hint: Text(l10n.selectRecipe),
-            isExpanded: true,
-            items: recipes.map((r) => DropdownMenuItem(
-              value: r,
-              child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-            )).toList(),
-            onChanged: (recipe) {
-              setState(() {
-                _selectedRecipe = recipe;
-                if (recipe != null) {
-                  _nameController.text = recipe.name;
-                  final grams = double.tryParse(_gramsController.text) ?? 100;
-                  final factor = recipe.totalGrams > 0 ? grams / recipe.totalGrams : grams / 100;
-                  _caloriesController.text = (recipe.sumCalories * factor).toStringAsFixed(0);
-                  _proteinController.text = (recipe.sumProtein * factor).toStringAsFixed(1);
-                  _fatController.text = (recipe.sumFat * factor).toStringAsFixed(1);
-                  _carbsController.text = (recipe.sumCarbs * factor).toStringAsFixed(1);
-                }
-              });
-            },
-          ),
+        Row(
+          children: [
+            const Text('📖', style: TextStyle(fontSize: 16)),
+            const Gap(6),
+            Text(l10n.recipes, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+          ],
+        ),
+        const Gap(6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: recipes.map((r) {
+            final isSelected = _selectedRecipe?.id == r.id;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedRecipe = null;
+                    _nameController.clear();
+                    _caloriesController.clear();
+                    _proteinController.clear();
+                    _fatController.clear();
+                    _carbsController.clear();
+                  } else {
+                    _selectedRecipe = r;
+                    _nameController.text = r.name;
+                    final grams = double.tryParse(_gramsController.text) ?? 100;
+                    final factor = r.totalGrams > 0 ? grams / r.totalGrams : grams / 100;
+                    _caloriesController.text = (r.sumCalories * factor).toStringAsFixed(0);
+                    _proteinController.text = (r.sumProtein * factor).toStringAsFixed(1);
+                    _fatController.text = (r.sumFat * factor).toStringAsFixed(1);
+                    _carbsController.text = (r.sumCarbs * factor).toStringAsFixed(1);
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Theme.of(context).dividerColor,
+                  ),
+                ),
+                child: Text(
+                  r.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
         if (_selectedRecipe != null) ...[
           const Gap(8),
-          IconButton(
-            icon: const Icon(Icons.clear, size: 20),
-            onPressed: () {
-              setState(() {
-                _selectedRecipe = null;
-                _nameController.clear();
-                _caloriesController.clear();
-                _proteinController.clear();
-                _fatController.clear();
-                _carbsController.clear();
-              });
-            },
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
+              child: Row(
+                  children: [
+                    const Text('📖', style: TextStyle(fontSize: 20)),
+                const Gap(8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedRecipe!.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      Text(
+                        '${_selectedRecipe!.totalGrams.toStringAsFixed(0)}г · '
+                        '${_selectedRecipe!.sumCalories.toStringAsFixed(0)}ккал',
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${l10n.portionWeight}:',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+              SizedBox(
+                width: 80,
+                height: 36,
+                child: TextField(
+                  controller: _gramsController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                    isDense: true,
+                    suffixText: 'г',
+                    suffixStyle: const TextStyle(fontSize: 11),
+                  ),
+                  onChanged: (_) {
+                    setState(() {});
+                    if (_selectedRecipe != null) _recalcFromRecipe();
+                  },
+                ),
+              ),
+              const Gap(8),
+              Text(
+                '/ ${_selectedRecipe!.totalGrams.toStringAsFixed(0)}г',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+              ),
+            ],
+          ),
+          const Gap(4),
+          Text(
+            '${_caloriesController.text.isEmpty ? '0' : _caloriesController.text}ккал · '
+            'Б${_proteinController.text.isEmpty ? '0' : _proteinController.text} '
+            'Ж${_fatController.text.isEmpty ? '0' : _fatController.text} '
+            'У${_carbsController.text.isEmpty ? '0' : _carbsController.text}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
           ),
         ],
       ],
