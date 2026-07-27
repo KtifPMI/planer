@@ -220,7 +220,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildNutritionCard(BuildContext context, WidgetRef ref, AppLocalizations l10n, ThemeData theme) {
     final totals = ref.watch(todayNutritionTotalsProvider);
     final targets = ref.watch(nutritionTargetsProvider);
-    final calPct = targets.calories > 0 ? (totals['calories']! / targets.calories).clamp(0.0, 1.0) : 0.0;
     final protPct = targets.protein > 0 ? (totals['protein']! / targets.protein).clamp(0.0, 1.0) : 0.0;
     final fatPct = targets.fat > 0 ? (totals['fat']! / targets.fat).clamp(0.0, 1.0) : 0.0;
     final carbsPct = targets.carbs > 0 ? (totals['carbs']! / targets.carbs).clamp(0.0, 1.0) : 0.0;

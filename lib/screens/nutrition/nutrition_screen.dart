@@ -707,7 +707,6 @@ class _AddFoodSheetState extends ConsumerState<_AddFoodSheet> {
   }
 
   Widget _buildEntryPreview(Map<String, double> totals, NutritionTargets targets, AppLocalizations l10n) {
-    final grams = double.tryParse(_gramsController.text) ?? 100;
     final cal = double.tryParse(_caloriesController.text) ?? 0;
     final prot = double.tryParse(_proteinController.text) ?? 0;
     final fat = double.tryParse(_fatController.text) ?? 0;

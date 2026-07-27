@@ -147,7 +147,7 @@ class UpdateService {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.apkDownloaded)),
+        SnackBar(content: Text(AppLocalizations.of(context).apkDownloaded)),
       );
     }
 
