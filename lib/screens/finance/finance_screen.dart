@@ -217,8 +217,7 @@ class FinanceScreen extends ConsumerWidget {
   ];
 
   Color _colorForCategoryId(String categoryId, int index) {
-    final hash = categoryId.hashCode;
-    return _categoryColors[hash.abs() % _categoryColors.length];
+    return _categoryColors[index % _categoryColors.length];
   }
 
   List<PieChartSectionData> _buildPieSections(
