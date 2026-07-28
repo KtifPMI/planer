@@ -128,8 +128,9 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                     ),
                   );
                   if (confirm == true) {
-                    await ref.read(workoutRepositoryProvider).deleteSession(w.id);
+                    await w.delete();
                     invalidateAllWorkouts(ref);
+                    setState(() {});
                   }
                 },
               ),
@@ -356,6 +357,26 @@ class _ActiveWorkoutCard extends StatelessWidget {
                       style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w600),
                     ),
                   ),
+                IconButton(
+                  icon: Icon(Icons.delete_outline, size: 18,
+                    color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l10n.confirmDelete),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await session.delete();
+                      onRefresh();
+                    }
+                  },
+                ),
               ],
             ),
             const Gap(12),
