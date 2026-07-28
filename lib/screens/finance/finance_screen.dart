@@ -159,7 +159,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.income),
+                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.income, selectedDay),
                 icon: const Icon(Icons.add, color: AppColors.income),
                 label: Text(l10n.income),
               ),
@@ -167,7 +167,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
             const Gap(12),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.expense),
+                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.expense, selectedDay),
                 icon: const Icon(Icons.add, color: AppColors.expense),
                 label: Text(l10n.expense),
               ),
@@ -362,6 +362,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     WidgetRef ref,
     AppLocalizations l10n,
     TransactionType type,
+    DateTime? selectedDay,
   ) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
@@ -424,7 +425,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                       amount: amount,
                       categoryId: selectedCategoryId!,
                       type: type,
-                      date: DateTime.now(),
+                      date: selectedDay ?? DateTime.now(),
                       note: noteController.text.isEmpty ? null : noteController.text,
                     );
                     await ref.read(financeRepositoryProvider).addTransaction(transaction);
