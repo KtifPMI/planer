@@ -60,7 +60,6 @@ final workoutCountThisWeekProvider = Provider<int>((ref) {
 });
 
 void invalidateAllWorkouts(WidgetRef ref) {
-  ref.invalidate(workoutRepositoryProvider);
   ref.invalidate(allWorkoutsProvider);
   ref.invalidate(monthWorkoutsProvider);
   ref.invalidate(latestWorkoutProvider);

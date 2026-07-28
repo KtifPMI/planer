@@ -128,7 +128,11 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                     ),
                   );
                   if (confirm == true) {
-                    await w.delete();
+                    try {
+                      await w.delete();
+                    } catch (_) {
+                      await ref.read(workoutRepositoryProvider).deleteSession(w.id);
+                    }
                     invalidateAllWorkouts(ref);
                     setState(() {});
                   }
