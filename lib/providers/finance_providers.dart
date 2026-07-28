@@ -20,6 +20,60 @@ final dayTransactionsProvider = Provider<List<Transaction>>((ref) {
       .getTransactionsForDay(day);
 });
 
+final filteredTransactionsProvider = Provider<List<Transaction>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day != null) return ref.watch(dayTransactionsProvider);
+  return ref.watch(monthTransactionsProvider);
+});
+
+final filteredIncomeProvider = Provider<double>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day != null) {
+    final txs = ref.watch(dayTransactionsProvider);
+    return txs.where((t) => t.type == TransactionType.income).fold(0.0, (s, t) => s + t.amount);
+  }
+  return ref.watch(monthIncomeProvider);
+});
+
+final filteredExpenseProvider = Provider<double>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day != null) {
+    final txs = ref.watch(dayTransactionsProvider);
+    return txs.where((t) => t.type == TransactionType.expense).fold(0.0, (s, t) => s + t.amount);
+  }
+  return ref.watch(monthExpenseProvider);
+});
+
+final filteredBalanceProvider = Provider<double>((ref) {
+  final inc = ref.watch(filteredIncomeProvider);
+  final exp = ref.watch(filteredExpenseProvider);
+  return inc - exp;
+});
+
+final filteredExpensesByCategoryProvider = Provider<Map<String, double>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day != null) {
+    final txs = ref.watch(dayTransactionsProvider);
+    final expenses = txs.where((t) => t.type == TransactionType.expense);
+    final map = <String, double>{};
+    for (final t in expenses) map[t.categoryId] = (map[t.categoryId] ?? 0) + t.amount;
+    return map;
+  }
+  return ref.watch(expensesByCategoryProvider);
+});
+
+final filteredIncomeByCategoryProvider = Provider<Map<String, double>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day != null) {
+    final txs = ref.watch(dayTransactionsProvider);
+    final incomes = txs.where((t) => t.type == TransactionType.income);
+    final map = <String, double>{};
+    for (final t in incomes) map[t.categoryId] = (map[t.categoryId] ?? 0) + t.amount;
+    return map;
+  }
+  return ref.watch(incomeByCategoryProvider);
+});
+
 final allTransactionsProvider = Provider<List<Transaction>>((ref) {
   return ref.watch(financeRepositoryProvider).getAllTransactions();
 });
@@ -122,12 +176,20 @@ final expensePlanProgressProvider = Provider<double>((ref) {
 });
 
 void invalidateAllFinance(WidgetRef ref) {
+  ref.invalidate(financeRepositoryProvider);
   ref.invalidate(monthIncomeProvider);
   ref.invalidate(monthExpenseProvider);
   ref.invalidate(monthBalanceProvider);
   ref.invalidate(monthTransactionsProvider);
   ref.invalidate(expensesByCategoryProvider);
   ref.invalidate(incomeByCategoryProvider);
+  ref.invalidate(dayTransactionsProvider);
+  ref.invalidate(filteredTransactionsProvider);
+  ref.invalidate(filteredIncomeProvider);
+  ref.invalidate(filteredExpenseProvider);
+  ref.invalidate(filteredBalanceProvider);
+  ref.invalidate(filteredExpensesByCategoryProvider);
+  ref.invalidate(filteredIncomeByCategoryProvider);
   ref.invalidate(allSavingsProvider);
   ref.invalidate(totalSavedProvider);
   ref.invalidate(totalTargetProvider);

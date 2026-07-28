@@ -24,23 +24,34 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final month = ref.watch(selectedMonthProvider);
-    final income = ref.watch(monthIncomeProvider);
-    final expense = ref.watch(monthExpenseProvider);
-    final balance = ref.watch(monthBalanceProvider);
-    final categories = ref.watch(expensesByCategoryProvider);
-    final incomeCategories = ref.watch(incomeByCategoryProvider);
+    final income = ref.watch(filteredIncomeProvider);
+    final expense = ref.watch(filteredExpenseProvider);
+    final balance = ref.watch(filteredBalanceProvider);
+    final categories = ref.watch(filteredExpensesByCategoryProvider);
+    final incomeCategories = ref.watch(filteredIncomeByCategoryProvider);
     final allCategories = ref.watch(allCategoriesProvider);
     final selectedDay = ref.watch(selectedDayProvider);
+    final transactions = ref.watch(filteredTransactionsProvider);
 
     final chartCategories = _showIncomeChart ? incomeCategories : categories;
-    final chartLabel = _showIncomeChart ? l10n.income : l10n.expense;
+
+    final incomeTxs = transactions.where((t) => t.type == TransactionType.income).toList();
+    final expenseTxs = transactions.where((t) => t.type == TransactionType.expense).toList();
 
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        // Title row with responsive title
         Row(
           children: [
-            Expanded(child: Text(l10n.finance, style: theme.textTheme.headlineLarge)),
+            Flexible(
+              fit: FlexFit.loose,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(l10n.finance, style: theme.textTheme.headlineLarge),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.chevron_left),
               onPressed: () {
@@ -116,8 +127,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                         amount: income,
                         color: AppColors.income,
                         icon: Icons.arrow_downward,
-                        isActive: _showIncomeChart && chartCategories.isNotEmpty,
-                        onTap: chartCategories.isNotEmpty
+                        isActive: _showIncomeChart && incomeCategories.isNotEmpty,
+                        onTap: incomeCategories.isNotEmpty
                             ? () => setState(() => _showIncomeChart = true)
                             : null,
                       ),
@@ -129,7 +140,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                         amount: expense,
                         color: AppColors.expense,
                         icon: Icons.arrow_upward,
-                        isActive: !_showIncomeChart && chartCategories.isNotEmpty,
+                        isActive: !_showIncomeChart && categories.isNotEmpty,
                         onTap: categories.isNotEmpty
                             ? () => setState(() => _showIncomeChart = false)
                             : null,
@@ -143,22 +154,33 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         ),
         const Gap(16),
 
-        // Toggleable chart
+        // Quick actions (above chart)
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.income),
+                icon: const Icon(Icons.add, color: AppColors.income),
+                label: Text(l10n.income),
+              ),
+            ),
+            const Gap(12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.expense),
+                icon: const Icon(Icons.add, color: AppColors.expense),
+                label: Text(l10n.expense),
+              ),
+            ),
+          ],
+        ),
+        const Gap(16),
+
+        // Toggleable chart (no SegmentedButton)
         if (chartCategories.isNotEmpty) ...[
-          Row(
-            children: [
-              Text(chartLabel, style: theme.textTheme.titleLarge),
-              const Spacer(),
-              if (incomeCategories.isNotEmpty && categories.isNotEmpty)
-                SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(value: false, label: Text(l10n.expense, style: const TextStyle(fontSize: 11))),
-                    ButtonSegment(value: true, label: Text(l10n.income, style: const TextStyle(fontSize: 11))),
-                  ],
-                  selected: {_showIncomeChart},
-                  onSelectionChanged: (v) => setState(() => _showIncomeChart = v.first),
-                ),
-            ],
+          Text(
+            _showIncomeChart ? l10n.income : l10n.expense,
+            style: theme.textTheme.titleLarge,
           ),
           const Gap(12),
           Card(
@@ -185,81 +207,78 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           const Gap(16),
         ],
 
-        // Quick actions
-        Row(
+        // Separate income / expense transaction lists
+        if (incomeTxs.isNotEmpty) ...[
+          Text(l10n.income, style: theme.textTheme.titleLarge),
+          const Gap(8),
+          ...incomeTxs.map((t) => _buildTransactionTile(context, ref, l10n, t)),
+        ],
+        if (expenseTxs.isNotEmpty) ...[
+          const Gap(12),
+          Text(l10n.expense, style: theme.textTheme.titleLarge),
+          const Gap(8),
+          ...expenseTxs.map((t) => _buildTransactionTile(context, ref, l10n, t)),
+        ],
+        if (incomeTxs.isEmpty && expenseTxs.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(l10n.noData, style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              )),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionTile(BuildContext context, WidgetRef ref, AppLocalizations l10n, Transaction t) {
+    final cat = ref.read(financeRepositoryProvider).getCategoryById(t.categoryId);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        leading: Text(cat?.icon ?? '📁', style: const TextStyle(fontSize: 24)),
+        title: Text(cat?.name ?? t.categoryId),
+        subtitle: t.note != null ? Text(t.note!) : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.income),
-                icon: const Icon(Icons.add, color: AppColors.income),
-                label: Text(l10n.income),
+            Text(
+              '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toStringAsFixed(0)} ₽',
+              style: TextStyle(
+                color: t.type == TransactionType.income ? AppColors.income : AppColors.expense,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const Gap(12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showAddTransactionDialog(context, ref, l10n, TransactionType.expense),
-                icon: const Icon(Icons.add, color: AppColors.expense),
-                label: Text(l10n.expense),
-              ),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  _showEditTransactionDialog(context, ref, l10n, t);
+                } else if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l10n.confirmDelete),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await ref.read(financeRepositoryProvider).deleteTransaction(t.id);
+                    invalidateAllFinance(ref);
+                  }
+                }
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
+              ],
             ),
           ],
         ),
-        const Gap(12),
-
-        // Recent transactions
-        Text(l10n.total, style: theme.textTheme.titleLarge),
-        const Gap(8),
-        ...ref.watch(monthTransactionsProvider).take(10).map((t) {
-          final cat = ref.read(financeRepositoryProvider).getCategoryById(t.categoryId);
-          return Card(
-            margin: const EdgeInsets.only(bottom: 4),
-            child: ListTile(
-              leading: Text(cat?.icon ?? '📁', style: const TextStyle(fontSize: 24)),
-              title: Text(cat?.name ?? t.categoryId),
-              subtitle: t.note != null ? Text(t.note!) : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${t.type == TransactionType.income ? '+' : '-'}${t.amount.toStringAsFixed(0)} ₽',
-                    style: TextStyle(
-                      color: t.type == TransactionType.income ? AppColors.income : AppColors.expense,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        _showEditTransactionDialog(context, ref, l10n, t);
-                      } else if (value == 'delete') {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(l10n.confirmDelete),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref.read(financeRepositoryProvider).deleteTransaction(t.id);
-                          invalidateAllFinance(ref);
-                        }
-                      }
-                    },
-                    itemBuilder: (ctx) => [
-                      PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
-                      PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ],
+      ),
     );
   }
 

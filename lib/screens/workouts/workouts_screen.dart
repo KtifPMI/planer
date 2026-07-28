@@ -497,6 +497,7 @@ class _SetRowState extends State<_SetRow> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -521,7 +522,7 @@ class _SetRowState extends State<_SetRow> {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).kg,
+                  hintText: l10n.kg,
                   contentPadding: EdgeInsets.zero,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                   isDense: true,
@@ -531,6 +532,9 @@ class _SetRowState extends State<_SetRow> {
               ),
             ),
           ),
+          Text(l10n.kg, style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          )),
           const Gap(4),
           Text('×', style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurface.withOpacity(0.4),
@@ -546,7 +550,7 @@ class _SetRowState extends State<_SetRow> {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'повт.',
+                  hintText: l10n.repsShort,
                   contentPadding: EdgeInsets.zero,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                   isDense: true,
@@ -556,6 +560,9 @@ class _SetRowState extends State<_SetRow> {
               ),
             ),
           ),
+          Text(l10n.repsShort, style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          )),
           const Gap(4),
           Checkbox(
             value: widget.set.completed,
