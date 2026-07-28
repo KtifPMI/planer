@@ -51,7 +51,21 @@ class SavingsScreen extends ConsumerWidget {
             ),
           ),
           const Gap(16),
-          ...savings.map((goal) => Card(
+          if (savings.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Column(
+                  children: [
+                    Icon(Icons.savings_outlined, size: 48, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                    const Gap(12),
+                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...savings.map((goal) => Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
@@ -86,6 +100,10 @@ class SavingsScreen extends ConsumerWidget {
               trailing: PopupMenuButton(
                 itemBuilder: (_) => [
                   PopupMenuItem(
+                    value: 'edit',
+                    child: Text(l10n.edit),
+                  ),
+                  PopupMenuItem(
                     value: 'add',
                     child: Text(l10n.add),
                   ),
@@ -96,8 +114,23 @@ class SavingsScreen extends ConsumerWidget {
                 ],
                 onSelected: (v) async {
                   if (v == 'delete') {
-                    await ref.read(financeRepositoryProvider).deleteSavingsGoal(goal.id);
-                    ref.invalidate(allSavingsProvider);
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l10n.delete),
+                        content: Text('${l10n.delete} "${goal.name}"?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref.read(financeRepositoryProvider).deleteSavingsGoal(goal.id);
+                      ref.invalidate(allSavingsProvider);
+                    }
+                  } else if (v == 'edit') {
+                    _showEditSavingsDialog(context, ref, l10n, goal);
                   } else if (v == 'add') {
                     _showAddAmountDialog(context, ref, l10n, goal);
                   }
@@ -145,14 +178,22 @@ class SavingsScreen extends ConsumerWidget {
                 onPressed: () async {
                   final target = double.tryParse(targetController.text);
                   if (nameController.text.isEmpty || target == null) return;
-                  final goal = SavingsGoal(
-                    id: FinanceRepository.generateId(),
-                    name: nameController.text,
-                    targetAmount: target,
-                  );
-                  await ref.read(financeRepositoryProvider).addSavingsGoal(goal);
-                  ref.invalidate(allSavingsProvider);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  try {
+                    final goal = SavingsGoal(
+                      id: FinanceRepository.generateId(),
+                      name: nameController.text,
+                      targetAmount: target,
+                    );
+                    await ref.read(financeRepositoryProvider).addSavingsGoal(goal);
+                    ref.invalidate(allSavingsProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('${l10n.error}: $e')),
+                      );
+                    }
+                  }
                 },
                 child: Text(l10n.save),
               ),
@@ -192,7 +233,62 @@ class SavingsScreen extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(controller.text);
                   if (amount == null) return;
-                  goal.currentAmount += amount;
+                  try {
+                    goal.currentAmount += amount;
+                    await goal.save();
+                    ref.invalidate(allSavingsProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('${l10n.error}: $e')),
+                      );
+                    }
+                  }
+                },
+                child: Text(l10n.save),
+              ),
+            ),
+            const Gap(20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditSavingsDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, SavingsGoal goal) {
+    final nameController = TextEditingController(text: goal.name);
+    final targetController = TextEditingController(text: goal.targetAmount.toStringAsFixed(0));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.edit, style: Theme.of(ctx).textTheme.titleLarge),
+            const Gap(16),
+            TextField(controller: nameController, decoration: InputDecoration(hintText: l10n.name), autofocus: true),
+            const Gap(12),
+            TextField(controller: targetController, decoration: const InputDecoration(hintText: '0 ₽'), keyboardType: TextInputType.number),
+            const Gap(20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final target = double.tryParse(targetController.text);
+                  if (nameController.text.isEmpty || target == null) return;
+                  goal.name = nameController.text;
+                  goal.targetAmount = target;
                   await goal.save();
                   ref.invalidate(allSavingsProvider);
                   if (ctx.mounted) Navigator.pop(ctx);

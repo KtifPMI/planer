@@ -254,9 +254,25 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                         IconButton(
                           icon: const Icon(Icons.close, size: 18),
                           onPressed: () async {
-                            await ref.read(nutritionRepositoryProvider).deleteEntry(e.id);
-                            ref.invalidate(todayMealEntriesProvider);
-                            ref.invalidate(todayNutritionTotalsProvider);
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(l10n.delete),
+                                content: Text('${l10n.delete} "${e.foodName}"?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) {
+                              await ref.read(nutritionRepositoryProvider).deleteEntry(e.id);
+                              ref.invalidate(todayMealEntriesProvider);
+                              ref.invalidate(todayNutritionTotalsProvider);
+                              for (final mt in MealType.values) {
+                                ref.invalidate(mealEntriesForTypeProvider(mt));
+                              }
+                            }
                           },
                         ),
                       ],
@@ -267,6 +283,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               leading: const Icon(Icons.add_circle_outline),
               title: Text(l10n.addFood),
               onTap: () => _showAddFoodSheet(context, ref, l10n, mealType),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.restaurant_menu),
+              title: Text(l10n.addDish),
+              onTap: () => _showRecipePickerForMeal(context, ref, l10n, mealType),
             ),
           ],
         ),
@@ -291,15 +313,18 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         onFoodAdded: () {
           ref.invalidate(todayMealEntriesProvider);
           ref.invalidate(todayNutritionTotalsProvider);
+          for (final mt in MealType.values) {
+            ref.invalidate(mealEntriesForTypeProvider(mt));
+          }
         },
       ),
     );
   }
 
-  void _showAddRecipeAsMealDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, Recipe recipe) {
+  void _showAddRecipeAsMealDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, Recipe recipe, {MealType? initialMeal}) {
     final gramsController = TextEditingController(text: recipe.totalGrams.toStringAsFixed(0));
 
-    MealType selectedMeal = MealType.breakfast;
+    MealType selectedMeal = initialMeal ?? MealType.breakfast;
 
     showModalBottomSheet(
       context: context,
@@ -370,6 +395,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     await ref.read(nutritionRepositoryProvider).addEntry(entry);
                     ref.invalidate(todayMealEntriesProvider);
                     ref.invalidate(todayNutritionTotalsProvider);
+                    for (final mt in MealType.values) {
+                      ref.invalidate(mealEntriesForTypeProvider(mt));
+                    }
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   child: Text(l10n.save),
@@ -380,6 +408,57 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
           );
         },
+      ),
+    );
+  }
+
+  void _showRecipePickerForMeal(BuildContext context, WidgetRef ref, AppLocalizations l10n, MealType mealType) {
+    final recipes = ref.read(recipesListProvider);
+    if (recipes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noRecipes)),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${l10n.addDish} → ${_mealTypeName(mealType, l10n)}',
+              style: Theme.of(ctx).textTheme.titleLarge),
+            const Gap(16),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: recipes.length,
+                itemBuilder: (_, i) {
+                  final r = recipes[i];
+                  return ListTile(
+                    leading: const Text('📖', style: TextStyle(fontSize: 20)),
+                    title: Text(r.name),
+                    subtitle: Text(
+                      '${r.totalGrams.toStringAsFixed(0)}г · ${r.sumCalories.toStringAsFixed(0)} ккал',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showAddRecipeAsMealDialog(context, ref, l10n, r, initialMeal: mealType);
+                    },
+                  );
+                },
+              ),
+            ),
+            const Gap(20),
+          ],
+        ),
       ),
     );
   }
@@ -435,8 +514,21 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18),
                           onPressed: () async {
-                            await ref.read(recipeRepositoryProvider).delete(r.id);
-                            refreshRecipes(ref);
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(l10n.delete),
+                                content: Text('${l10n.delete} "${r.name}"?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) {
+                              await ref.read(recipeRepositoryProvider).delete(r.id);
+                              refreshRecipes(ref);
+                            }
                           },
                         ),
                       ],

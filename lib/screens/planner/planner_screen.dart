@@ -137,9 +137,22 @@ class PlannerScreen extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.close, size: 18),
                           onPressed: () async {
-                            await ref.read(plannerRepositoryProvider).deleteGoal(plan.id, e.key);
-                            ref.invalidate(currentWeekProvider);
-                            ref.invalidate(weekAnalyticsProvider);
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(l10n.delete),
+                                content: Text('${l10n.delete} "${e.value.title}"?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) {
+                              await ref.read(plannerRepositoryProvider).deleteGoal(plan.id, e.key);
+                              ref.invalidate(currentWeekProvider);
+                              ref.invalidate(weekAnalyticsProvider);
+                            }
                           },
                         ),
                       ],
@@ -241,9 +254,22 @@ class PlannerScreen extends ConsumerWidget {
                             IconButton(
                               icon: const Icon(Icons.close, size: 16),
                               onPressed: () async {
-                                await ref.read(plannerRepositoryProvider).deleteTask(plan.id, day, e.key);
-                                ref.invalidate(currentWeekProvider);
-                                ref.invalidate(weekAnalyticsProvider);
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(l10n.delete),
+                                    content: Text('${l10n.delete} "${e.value.title}"?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true) {
+                                  await ref.read(plannerRepositoryProvider).deleteTask(plan.id, day, e.key);
+                                  ref.invalidate(currentWeekProvider);
+                                  ref.invalidate(weekAnalyticsProvider);
+                                }
                               },
                             ),
                           ],

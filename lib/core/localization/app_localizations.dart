@@ -160,6 +160,13 @@ class AppLocalizations {
       'recipeTotalGramsHint': 'суммарная масса блюд',
       'createCustomFood': 'Создать продукт',
       'saved': 'сохранён',
+      'error': 'Ошибка',
+      'debtAmount': 'Сумма долга',
+      'interestRate': 'Ставка %',
+      'minPayment': 'Мин. платёж',
+      'paymentFor': 'Оплата',
+      'noSavingsGoals': 'Пока нет накоплений',
+      'addDish': 'Добавить блюдо',
       'noEntries': 'Нет записей',
       'noRecipes': 'Нет рецептов',
       'kg': 'кг',
@@ -352,6 +359,13 @@ class AppLocalizations {
       'recipeTotalGramsHint': 'total weight of all ingredients',
       'createCustomFood': 'Create food item',
       'saved': 'saved',
+      'error': 'Error',
+      'debtAmount': 'Debt amount',
+      'interestRate': 'Interest rate %',
+      'minPayment': 'Min. payment',
+      'paymentFor': 'Payment',
+      'noSavingsGoals': 'No savings goals yet',
+      'addDish': 'Add dish',
       'noEntries': 'No entries',
       'noRecipes': 'No recipes',
       'kg': 'kg',
@@ -535,6 +549,13 @@ class AppLocalizations {
   String get recipeTotalGramsHint => _t('recipeTotalGramsHint');
   String get createCustomFood => _t('createCustomFood');
   String get saved => _t('saved');
+  String get error => _t('error');
+  String get debtAmount => _t('debtAmount');
+  String get interestRate => _t('interestRate');
+  String get minPayment => _t('minPayment');
+  String get paymentFor => _t('paymentFor');
+  String get noSavingsGoals => _t('noSavingsGoals');
+  String get addDish => _t('addDish');
   String get noEntries => _t('noEntries');
   String get noRecipes => _t('noRecipes');
   String get kg => _t('kg');

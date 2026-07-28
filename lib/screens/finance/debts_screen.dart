@@ -45,7 +45,21 @@ class DebtsScreen extends ConsumerWidget {
             ),
           ),
           const Gap(16),
-          ...debts.map((debt) => Card(
+          if (debts.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Column(
+                  children: [
+                    Icon(Icons.credit_card_off, size: 48, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                    const Gap(12),
+                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...debts.map((debt) => Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
@@ -84,13 +98,29 @@ class DebtsScreen extends ConsumerWidget {
               ),
               trailing: PopupMenuButton(
                 itemBuilder: (_) => [
+                  PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
                    PopupMenuItem(value: 'pay', child: Text(AppLocalizations.of(context).pay)),
                   PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
                 ],
                 onSelected: (v) async {
                   if (v == 'delete') {
-                    await ref.read(financeRepositoryProvider).deleteDebt(debt.id);
-                    ref.invalidate(allDebtsProvider);
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(l10n.delete),
+                        content: Text('${l10n.delete} "${debt.name}"?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref.read(financeRepositoryProvider).deleteDebt(debt.id);
+                      ref.invalidate(allDebtsProvider);
+                    }
+                  } else if (v == 'edit') {
+                    _showEditDebtDialog(context, ref, l10n, debt);
                   } else if (v == 'pay') {
                     _showPayDialog(context, ref, l10n, debt);
                   }
@@ -132,11 +162,11 @@ class DebtsScreen extends ConsumerWidget {
             const Gap(16),
             TextField(controller: nameController, decoration: InputDecoration(hintText: l10n.name), autofocus: true),
             const Gap(12),
-            TextField(controller: amountController, decoration: const InputDecoration(hintText: 'Сумма долга'), keyboardType: TextInputType.number),
+            TextField(controller: amountController, decoration: InputDecoration(hintText: l10n.debtAmount), keyboardType: TextInputType.number),
             const Gap(12),
-            TextField(controller: rateController, decoration: const InputDecoration(hintText: 'Ставка %'), keyboardType: TextInputType.number),
+            TextField(controller: rateController, decoration: InputDecoration(hintText: l10n.interestRate), keyboardType: TextInputType.number),
             const Gap(12),
-            TextField(controller: paymentController, decoration: const InputDecoration(hintText: 'Мин. платёж'), keyboardType: TextInputType.number),
+            TextField(controller: paymentController, decoration: InputDecoration(hintText: l10n.minPayment), keyboardType: TextInputType.number),
             const Gap(20),
             SizedBox(
               width: double.infinity,
@@ -144,7 +174,8 @@ class DebtsScreen extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountController.text);
                   if (nameController.text.isEmpty || amount == null) return;
-                  final debt = Debt(
+                  try {
+                    final debt = Debt(
                     id: FinanceRepository.generateId(),
                     name: nameController.text,
                     totalAmount: amount,
@@ -195,6 +226,61 @@ class DebtsScreen extends ConsumerWidget {
                   if (amount == null || amount <= 0) return;
                   debt.paidAmount += amount;
                   if (debt.isPaidOff) debt.status = 'paid';
+                  await debt.save();
+                  ref.invalidate(allDebtsProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Text(l10n.save),
+              ),
+            ),
+            const Gap(20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditDebtDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n, Debt debt) {
+    final nameController = TextEditingController(text: debt.name);
+    final amountController = TextEditingController(text: debt.totalAmount.toStringAsFixed(0));
+    final rateController = TextEditingController(text: debt.interestRate.toStringAsFixed(0));
+    final paymentController = TextEditingController(text: debt.minPayment.toStringAsFixed(0));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.edit, style: Theme.of(ctx).textTheme.titleLarge),
+            const Gap(16),
+            TextField(controller: nameController, decoration: InputDecoration(hintText: l10n.name), autofocus: true),
+            const Gap(12),
+            TextField(controller: amountController, decoration: const InputDecoration(hintText: 'Сумма долга'), keyboardType: TextInputType.number),
+            const Gap(12),
+            TextField(controller: rateController, decoration: const InputDecoration(hintText: 'Ставка %'), keyboardType: TextInputType.number),
+            const Gap(12),
+            TextField(controller: paymentController, decoration: const InputDecoration(hintText: 'Мин. платёж'), keyboardType: TextInputType.number),
+            const Gap(20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text);
+                  if (nameController.text.isEmpty || amount == null) return;
+                  debt.name = nameController.text;
+                  debt.totalAmount = amount;
+                  debt.interestRate = double.tryParse(rateController.text) ?? 0;
+                  debt.minPayment = double.tryParse(paymentController.text) ?? 0;
                   await debt.save();
                   ref.invalidate(allDebtsProvider);
                   if (ctx.mounted) Navigator.pop(ctx);
