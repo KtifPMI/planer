@@ -51,9 +51,9 @@ class DebtsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
                   children: [
-                    Icon(Icons.credit_card_off, size: 48, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                    Icon(Icons.credit_card_off, size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
                     const Gap(12),
-                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                   ],
                 ),
               ),
@@ -67,7 +67,7 @@ class DebtsScreen extends ConsumerWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: (debt.isPaidOff ? AppColors.success : AppColors.debt).withOpacity(0.15),
+                  color: (debt.isPaidOff ? AppColors.success : AppColors.debt).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -82,7 +82,7 @@ class DebtsScreen extends ConsumerWidget {
                   const Gap(8),
                   LinearProgressIndicator(
                     value: debt.progress.clamp(0.0, 1.0),
-                    backgroundColor: AppColors.debt.withOpacity(0.15),
+                    backgroundColor: AppColors.debt.withValues(alpha: 0.15),
                     valueColor: AlwaysStoppedAnimation(
                       debt.isPaidOff ? AppColors.success : AppColors.debt,
                     ),
@@ -176,15 +176,22 @@ class DebtsScreen extends ConsumerWidget {
                   if (nameController.text.isEmpty || amount == null) return;
                   try {
                     final debt = Debt(
-                    id: FinanceRepository.generateId(),
-                    name: nameController.text,
-                    totalAmount: amount,
-                    interestRate: double.tryParse(rateController.text) ?? 0,
-                    minPayment: double.tryParse(paymentController.text) ?? 0,
-                  );
-                  await ref.read(financeRepositoryProvider).addDebt(debt);
-                  ref.invalidate(allDebtsProvider);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                      id: FinanceRepository.generateId(),
+                      name: nameController.text,
+                      totalAmount: amount,
+                      interestRate: double.tryParse(rateController.text) ?? 0,
+                      minPayment: double.tryParse(paymentController.text) ?? 0,
+                    );
+                    await ref.read(financeRepositoryProvider).addDebt(debt);
+                    ref.invalidate(allDebtsProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('${l10n.error}: $e')),
+                      );
+                    }
+                  }
                 },
                 child: Text(l10n.save),
               ),
@@ -214,7 +221,7 @@ class DebtsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Оплата: ${debt.name}', style: Theme.of(ctx).textTheme.titleLarge),
+            Text('${l10n.paymentFor}: ${debt.name}', style: Theme.of(ctx).textTheme.titleLarge),
             const Gap(16),
             TextField(controller: controller, decoration: const InputDecoration(hintText: '0 ₽'), keyboardType: TextInputType.number, autofocus: true),
             const Gap(20),
@@ -224,11 +231,19 @@ class DebtsScreen extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(controller.text);
                   if (amount == null || amount <= 0) return;
-                  debt.paidAmount += amount;
-                  if (debt.isPaidOff) debt.status = 'paid';
-                  await debt.save();
-                  ref.invalidate(allDebtsProvider);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  try {
+                    debt.paidAmount += amount;
+                    if (debt.isPaidOff) debt.status = 'paid';
+                    await debt.save();
+                    ref.invalidate(allDebtsProvider);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('${l10n.error}: $e')),
+                      );
+                    }
+                  }
                 },
                 child: Text(l10n.save),
               ),

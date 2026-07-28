@@ -41,7 +41,7 @@ class SavingsScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
                       value: overallProgress.clamp(0.0, 1.0),
-                      backgroundColor: AppColors.savings.withOpacity(0.15),
+                      backgroundColor: AppColors.savings.withValues(alpha: 0.15),
                       valueColor: const AlwaysStoppedAnimation(AppColors.savings),
                       minHeight: 8,
                     ),
@@ -57,9 +57,9 @@ class SavingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
                   children: [
-                    Icon(Icons.savings_outlined, size: 48, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                    Icon(Icons.savings_outlined, size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
                     const Gap(12),
-                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                    Text(l10n.noData, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                   ],
                 ),
               ),
@@ -73,7 +73,7 @@ class SavingsScreen extends ConsumerWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.savings.withOpacity(0.15),
+                  color: AppColors.savings.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.savings, color: AppColors.savings),
@@ -85,7 +85,7 @@ class SavingsScreen extends ConsumerWidget {
                   const Gap(8),
                   LinearProgressIndicator(
                     value: goal.progress.clamp(0.0, 1.0),
-                    backgroundColor: AppColors.savings.withOpacity(0.15),
+                    backgroundColor: AppColors.savings.withValues(alpha: 0.15),
                     valueColor: const AlwaysStoppedAnimation(AppColors.savings),
                     minHeight: 4,
                   ),
