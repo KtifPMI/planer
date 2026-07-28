@@ -9,11 +9,18 @@ import '../../data/models/finance.dart';
 import '../../providers/finance_providers.dart';
 import '../../data/repositories/finance_repository.dart';
 
-class FinanceScreen extends ConsumerWidget {
+class FinanceScreen extends ConsumerStatefulWidget {
   const FinanceScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinanceScreen> createState() => _FinanceScreenState();
+}
+
+class _FinanceScreenState extends ConsumerState<FinanceScreen> {
+  bool _showIncomeChart = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final month = ref.watch(selectedMonthProvider);
@@ -23,6 +30,10 @@ class FinanceScreen extends ConsumerWidget {
     final categories = ref.watch(expensesByCategoryProvider);
     final incomeCategories = ref.watch(incomeByCategoryProvider);
     final allCategories = ref.watch(allCategoriesProvider);
+    final selectedDay = ref.watch(selectedDayProvider);
+
+    final chartCategories = _showIncomeChart ? incomeCategories : categories;
+    final chartLabel = _showIncomeChart ? l10n.income : l10n.expense;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -35,6 +46,7 @@ class FinanceScreen extends ConsumerWidget {
               onPressed: () {
                 ref.read(selectedMonthProvider.notifier).state =
                     DateTime(month.year, month.month - 1);
+                ref.read(selectedDayProvider.notifier).state = null;
               },
             ),
             Text(
@@ -46,8 +58,34 @@ class FinanceScreen extends ConsumerWidget {
               onPressed: () {
                 ref.read(selectedMonthProvider.notifier).state =
                     DateTime(month.year, month.month + 1);
+                ref.read(selectedDayProvider.notifier).state = null;
               },
             ),
+            const Gap(4),
+            IconButton(
+              icon: Icon(Icons.calendar_today, size: 20,
+                color: selectedDay != null ? AppColors.primary : null),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDay ?? DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) {
+                  ref.read(selectedDayProvider.notifier).state = picked;
+                  ref.read(selectedMonthProvider.notifier).state =
+                      DateTime(picked.year, picked.month);
+                }
+              },
+            ),
+            if (selectedDay != null)
+              IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                onPressed: () {
+                  ref.read(selectedDayProvider.notifier).state = null;
+                },
+              ),
           ],
         ),
         const Gap(20),
@@ -58,7 +96,10 @@ class FinanceScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                Text(l10n.balance, style: theme.textTheme.bodyMedium),
+                Text(selectedDay != null
+                    ? '${selectedDay.day} ${l10n.monthName(selectedDay.month)}'
+                    : l10n.balance,
+                  style: theme.textTheme.bodyMedium),
                 const Gap(8),
                 Text(
                   '${balance.toStringAsFixed(0)} ₽',
@@ -75,8 +116,9 @@ class FinanceScreen extends ConsumerWidget {
                         amount: income,
                         color: AppColors.income,
                         icon: Icons.arrow_downward,
-                        onTap: incomeCategories.isNotEmpty
-                            ? () => _showCategoryChart(context, ref, l10n, incomeCategories, allCategories, TransactionType.income)
+                        isActive: _showIncomeChart && chartCategories.isNotEmpty,
+                        onTap: chartCategories.isNotEmpty
+                            ? () => setState(() => _showIncomeChart = true)
                             : null,
                       ),
                     ),
@@ -87,8 +129,9 @@ class FinanceScreen extends ConsumerWidget {
                         amount: expense,
                         color: AppColors.expense,
                         icon: Icons.arrow_upward,
+                        isActive: !_showIncomeChart && chartCategories.isNotEmpty,
                         onTap: categories.isNotEmpty
-                            ? () => _showCategoryChart(context, ref, l10n, categories, allCategories, TransactionType.expense)
+                            ? () => setState(() => _showIncomeChart = false)
                             : null,
                       ),
                     ),
@@ -100,37 +143,23 @@ class FinanceScreen extends ConsumerWidget {
         ),
         const Gap(16),
 
-        // Expense chart
-        if (categories.isNotEmpty) ...[
-          Text(l10n.expense, style: theme.textTheme.titleLarge),
-          const Gap(12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 200,
-                    child: PieChart(
-                      PieChartData(
-                        sections: _buildPieSections(categories, allCategories),
-                        centerSpaceRadius: 40,
-                        sectionsSpace: 2,
-                      ),
-                    ),
-                  ),
-                  const Gap(16),
-                  _buildLegend(categories, allCategories),
-                ],
-              ),
-            ),
+        // Toggleable chart
+        if (chartCategories.isNotEmpty) ...[
+          Row(
+            children: [
+              Text(chartLabel, style: theme.textTheme.titleLarge),
+              const Spacer(),
+              if (incomeCategories.isNotEmpty && categories.isNotEmpty)
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(value: false, label: Text(l10n.expense, style: const TextStyle(fontSize: 11))),
+                    ButtonSegment(value: true, label: Text(l10n.income, style: const TextStyle(fontSize: 11))),
+                  ],
+                  selected: {_showIncomeChart},
+                  onSelectionChanged: (v) => setState(() => _showIncomeChart = v.first),
+                ),
+            ],
           ),
-          const Gap(16),
-        ],
-
-        // Income chart
-        if (incomeCategories.isNotEmpty) ...[
-          Text(l10n.income, style: theme.textTheme.titleLarge),
           const Gap(12),
           Card(
             child: Padding(
@@ -141,14 +170,14 @@ class FinanceScreen extends ConsumerWidget {
                     height: 200,
                     child: PieChart(
                       PieChartData(
-                        sections: _buildPieSections(incomeCategories, allCategories),
+                        sections: _buildPieSections(chartCategories, allCategories),
                         centerSpaceRadius: 40,
                         sectionsSpace: 2,
                       ),
                     ),
                   ),
                   const Gap(16),
-                  _buildLegend(incomeCategories, allCategories),
+                  _buildLegend(chartCategories, allCategories),
                 ],
               ),
             ),
@@ -231,50 +260,6 @@ class FinanceScreen extends ConsumerWidget {
           );
         }),
       ],
-    );
-  }
-
-  void _showCategoryChart(BuildContext context, WidgetRef ref, AppLocalizations l10n,
-      Map<String, double> categories, List<Category> allCategories, TransactionType type) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).dividerColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Gap(16),
-            Text(
-              type == TransactionType.income ? l10n.income : l10n.expense,
-              style: Theme.of(ctx).textTheme.titleLarge,
-            ),
-            const Gap(20),
-            SizedBox(
-              height: 240,
-              child: PieChart(
-                PieChartData(
-                  sections: _buildPieSections(categories, allCategories),
-                  centerSpaceRadius: 50,
-                  sectionsSpace: 2,
-                ),
-              ),
-            ),
-            const Gap(20),
-            _buildLegend(categories, allCategories),
-            const Gap(20),
-          ],
-        ),
-      ),
     );
   }
 
@@ -527,6 +512,7 @@ class _FinanceMiniCard extends StatelessWidget {
   final Color color;
   final IconData icon;
   final VoidCallback? onTap;
+  final bool isActive;
 
   const _FinanceMiniCard({
     required this.label,
@@ -534,17 +520,20 @@ class _FinanceMiniCard extends StatelessWidget {
     required this.color,
     required this.icon,
     this.onTap,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: isActive ? color.withOpacity(0.2) : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
+          border: isActive ? Border.all(color: color, width: 2) : null,
         ),
         child: Column(
           children: [

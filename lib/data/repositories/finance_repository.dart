@@ -18,6 +18,15 @@ class FinanceRepository {
         .toList();
   }
 
+  List<Transaction> getTransactionsForDay(DateTime day) {
+    return _transactions.values
+        .where((t) =>
+            t.date.year == day.year &&
+            t.date.month == day.month &&
+            t.date.day == day.day)
+        .toList();
+  }
+
   List<Transaction> getTransactionsByType(TransactionType type, int year, int month) {
     return getTransactionsForMonth(year, month)
         .where((t) => t.type == type)

@@ -11,6 +11,15 @@ final selectedMonthProvider = StateProvider<DateTime>((ref) {
   return DateTime.now();
 });
 
+final selectedDayProvider = StateProvider<DateTime?>((ref) => null);
+
+final dayTransactionsProvider = Provider<List<Transaction>>((ref) {
+  final day = ref.watch(selectedDayProvider);
+  if (day == null) return [];
+  return ref.watch(financeRepositoryProvider)
+      .getTransactionsForDay(day);
+});
+
 final allTransactionsProvider = Provider<List<Transaction>>((ref) {
   return ref.watch(financeRepositoryProvider).getAllTransactions();
 });

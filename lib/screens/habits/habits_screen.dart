@@ -58,7 +58,10 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
                           habit: scheduledHabits[i],
                           selectedDate: _selectedDate,
                           repo: ref.read(habitRepositoryProvider),
-                          onRefresh: () => setState(() {}),
+                          onRefresh: () {
+                            ref.invalidate(habitsListProvider);
+                            setState(() {});
+                          },
                           l10n: l10n,
                           theme: theme,
                         ),
@@ -197,9 +200,11 @@ class _HabitCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+      child: GestureDetector(
+        onTap: () => _showDetail(context),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -287,6 +292,7 @@ class _HabitCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -312,7 +318,7 @@ class _HabitCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _HabitDetailSheet(habit: habit, repo: repo, l10n: l10n),
+      builder: (_) => _HabitDetailSheet(habit: habit, repo: repo, l10n: l10n, onRefresh: onRefresh),
     );
   }
 }
@@ -475,8 +481,9 @@ class _HabitDetailSheet extends StatefulWidget {
   final Habit habit;
   final HabitRepository repo;
   final AppLocalizations l10n;
+  final VoidCallback? onRefresh;
 
-  const _HabitDetailSheet({required this.habit, required this.repo, required this.l10n});
+  const _HabitDetailSheet({required this.habit, required this.repo, required this.l10n, this.onRefresh});
 
   @override
   State<_HabitDetailSheet> createState() => _HabitDetailSheetState();
@@ -577,16 +584,6 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
               ),
             ),
             const Gap(16),
-            Text(widget.l10n.calendar, style: theme.textTheme.titleMedium),
-            const Gap(8),
-            _MonthCalendar(
-              habit: h,
-              repo: widget.repo,
-              month: _month,
-              l10n: widget.l10n,
-              onMonthChanged: (m) => setState(() => _month = m),
-            ),
-            const Gap(16),
             Row(
               children: [
                 Expanded(
@@ -619,6 +616,7 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
                       );
                       if (confirmed == true) {
                         await widget.repo.delete(h.id);
+                        widget.onRefresh?.call();
                         if (ctx.mounted) Navigator.pop(context);
                       }
                     },
@@ -628,6 +626,17 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
                 ),
               ],
             ),
+            const Gap(16),
+            Text(widget.l10n.calendar, style: theme.textTheme.titleMedium),
+            const Gap(8),
+            _MonthCalendar(
+              habit: h,
+              repo: widget.repo,
+              month: _month,
+              l10n: widget.l10n,
+              onMonthChanged: (m) => setState(() => _month = m),
+            ),
+            const Gap(16),
           ],
         ),
       ),
@@ -658,7 +667,7 @@ class _HabitDetailSheetState extends State<_HabitDetailSheet> {
       builder: (_) => _HabitEditSheet(
         existing: habit,
         l10n: widget.l10n,
-        onSave: () {},
+        onSave: () => widget.onRefresh?.call(),
       ),
     );
   }
@@ -768,11 +777,12 @@ class _MonthCalendar extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-            ],
-          ),
+          ],
         ),
-      ));
-    }
+      ),
+      ),
+    );
+  }
 
     return Column(
       children: [

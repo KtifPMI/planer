@@ -270,12 +270,21 @@ class _TemplateCard extends StatelessWidget {
               child:               Row(
                 children: [
                   Expanded(child: Text(ex.name, style: theme.textTheme.bodyMedium)),
-                  Text(
-                    '${ex.targetSets} ${l10n.setsCount.toLowerCase()} × ${ex.targetReps} ${l10n.repsShort.toLowerCase()}'
-                    '${ex.targetWeight > 0 ? " · ${ex.targetWeight.toInt()} ${l10n.kg}" : ""}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${ex.targetSets} × ${ex.targetReps}',
+                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '${l10n.sets.toLowerCase()} × ${l10n.reps.toLowerCase()}'
+                        '${ex.targetWeight > 0 ? " · ${ex.targetWeight.toInt()} ${l10n.kg}" : ""}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

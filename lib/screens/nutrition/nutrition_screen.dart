@@ -66,10 +66,23 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           },
         ),
         Expanded(
-          child: Text(
-            _formatDate(date, l10n),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+          child: GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: date,
+                firstDate: DateTime(2020),
+                lastDate: now,
+              );
+              if (picked != null) {
+                ref.read(selectedNutritionDateProvider.notifier).state = picked;
+              }
+            },
+            child: Text(
+              _formatDate(date, l10n),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
         ),
         IconButton(
@@ -80,6 +93,21 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                       date.add(const Duration(days: 1));
                 }
               : null,
+        ),
+        IconButton(
+          icon: Icon(Icons.calendar_today, size: 18,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+          onPressed: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: date,
+              firstDate: DateTime(2020),
+              lastDate: now,
+            );
+            if (picked != null) {
+              ref.read(selectedNutritionDateProvider.notifier).state = picked;
+            }
+          },
         ),
       ],
     );
