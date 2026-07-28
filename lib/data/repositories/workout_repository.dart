@@ -94,5 +94,14 @@ class WorkoutRepository {
   int getSessionsThisMonth(int year, int month) =>
       getSessionsForMonth(year, month).length;
 
+  int getSessionsForWeek(DateTime weekDate) {
+    final monday = weekDate.subtract(Duration(days: weekDate.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    return _sessions.values.where((s) {
+      return s.date.isAfter(monday.subtract(const Duration(days: 1))) &&
+          s.date.isBefore(sunday.add(const Duration(days: 1)));
+    }).length;
+  }
+
   int get totalSessions => _sessions.length;
 }

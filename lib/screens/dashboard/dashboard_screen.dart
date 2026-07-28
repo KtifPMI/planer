@@ -33,6 +33,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.invalidate(monthIncomeProvider);
       ref.invalidate(monthExpenseProvider);
       ref.invalidate(workoutCountThisMonthProvider);
+      ref.invalidate(workoutTemplatesThisWeekProvider);
+      ref.invalidate(workoutCountThisWeekProvider);
       ref.invalidate(weekAnalyticsProvider);
       ref.invalidate(todayNutritionTotalsProvider);
       try { UpdateService.checkAndShow(context); } catch (_) {}
@@ -47,6 +49,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final monthIncome = ref.watch(monthIncomeProvider);
     final monthExpense = ref.watch(monthExpenseProvider);
     final workoutCount = ref.watch(workoutCountThisMonthProvider);
+    final workoutPlanned = ref.watch(workoutTemplatesThisWeekProvider);
+    final workoutDone = ref.watch(workoutCountThisWeekProvider);
     final analytics = ref.watch(weekAnalyticsProvider);
 
     final todayHabitsDone = todayStats['done'] as int;
@@ -143,24 +147,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const Gap(12),
 
         // Workouts
-        if (workoutCount > 0)
-          ProgressCard(
-            title: l10n.workouts,
-            progress: workoutCount / 20,
-            subtitle: '$workoutCount / 20 ${l10n.month.toLowerCase()}',
-            icon: Icons.fitness_center,
-            color: AppColors.workoutPrimary,
-            onTap: () => context.go('/workouts'),
-          )
-        else
-          ProgressCard(
-            title: l10n.workouts,
-            progress: 0,
-            subtitle: l10n.workouts,
-            icon: Icons.fitness_center,
-            color: AppColors.workoutPrimary,
-            onTap: () => context.go('/workouts'),
-          ),
+        ProgressCard(
+          title: l10n.workouts,
+          progress: workoutPlanned > 0 ? workoutDone / workoutPlanned : 0,
+          subtitle: workoutPlanned > 0
+              ? '$workoutDone / $workoutPlanned ${l10n.week.toLowerCase()}'
+              : '$workoutCount ${l10n.month.toLowerCase()}',
+          icon: Icons.fitness_center,
+          color: AppColors.workoutPrimary,
+          onTap: () => context.go('/workouts'),
+        ),
         const Gap(12),
 
         // Nutrition

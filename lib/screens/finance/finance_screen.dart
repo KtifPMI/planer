@@ -21,6 +21,7 @@ class FinanceScreen extends ConsumerWidget {
     final expense = ref.watch(monthExpenseProvider);
     final balance = ref.watch(monthBalanceProvider);
     final categories = ref.watch(expensesByCategoryProvider);
+    final incomeCategories = ref.watch(incomeByCategoryProvider);
     final allCategories = ref.watch(allCategoriesProvider);
 
     return ListView(
@@ -74,6 +75,9 @@ class FinanceScreen extends ConsumerWidget {
                         amount: income,
                         color: AppColors.income,
                         icon: Icons.arrow_downward,
+                        onTap: incomeCategories.isNotEmpty
+                            ? () => _showCategoryChart(context, ref, l10n, incomeCategories, allCategories, TransactionType.income)
+                            : null,
                       ),
                     ),
                     const Gap(12),
@@ -83,6 +87,9 @@ class FinanceScreen extends ConsumerWidget {
                         amount: expense,
                         color: AppColors.expense,
                         icon: Icons.arrow_upward,
+                        onTap: categories.isNotEmpty
+                            ? () => _showCategoryChart(context, ref, l10n, categories, allCategories, TransactionType.expense)
+                            : null,
                       ),
                     ),
                   ],
@@ -114,6 +121,34 @@ class FinanceScreen extends ConsumerWidget {
                   ),
                   const Gap(16),
                   _buildLegend(categories, allCategories),
+                ],
+              ),
+            ),
+          ),
+          const Gap(16),
+        ],
+
+        // Income chart
+        if (incomeCategories.isNotEmpty) ...[
+          Text(l10n.income, style: theme.textTheme.titleLarge),
+          const Gap(12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 200,
+                    child: PieChart(
+                      PieChartData(
+                        sections: _buildPieSections(incomeCategories, allCategories),
+                        centerSpaceRadius: 40,
+                        sectionsSpace: 2,
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  _buildLegend(incomeCategories, allCategories),
                 ],
               ),
             ),
@@ -181,11 +216,7 @@ class FinanceScreen extends ConsumerWidget {
                         );
                         if (confirm == true) {
                           await ref.read(financeRepositoryProvider).deleteTransaction(t.id);
-                          ref.invalidate(monthTransactionsProvider);
-                          ref.invalidate(monthIncomeProvider);
-                          ref.invalidate(monthExpenseProvider);
-                          ref.invalidate(monthBalanceProvider);
-                          ref.invalidate(expensesByCategoryProvider);
+                          invalidateAllFinance(ref);
                         }
                       }
                     },
@@ -200,6 +231,50 @@ class FinanceScreen extends ConsumerWidget {
           );
         }),
       ],
+    );
+  }
+
+  void _showCategoryChart(BuildContext context, WidgetRef ref, AppLocalizations l10n,
+      Map<String, double> categories, List<Category> allCategories, TransactionType type) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Gap(16),
+            Text(
+              type == TransactionType.income ? l10n.income : l10n.expense,
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
+            const Gap(20),
+            SizedBox(
+              height: 240,
+              child: PieChart(
+                PieChartData(
+                  sections: _buildPieSections(categories, allCategories),
+                  centerSpaceRadius: 50,
+                  sectionsSpace: 2,
+                ),
+              ),
+            ),
+            const Gap(20),
+            _buildLegend(categories, allCategories),
+            const Gap(20),
+          ],
+        ),
+      ),
     );
   }
 
@@ -349,11 +424,7 @@ class FinanceScreen extends ConsumerWidget {
                       note: noteController.text.isEmpty ? null : noteController.text,
                     );
                     await ref.read(financeRepositoryProvider).addTransaction(transaction);
-                    ref.invalidate(monthTransactionsProvider);
-                    ref.invalidate(monthIncomeProvider);
-                    ref.invalidate(monthExpenseProvider);
-                    ref.invalidate(monthBalanceProvider);
-                    ref.invalidate(expensesByCategoryProvider);
+                    invalidateAllFinance(ref);
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   child: Text(l10n.save),
@@ -435,11 +506,7 @@ class FinanceScreen extends ConsumerWidget {
                       note: noteController.text.isEmpty ? null : noteController.text,
                     );
                     await ref.read(financeRepositoryProvider).updateTransaction(updated);
-                    ref.invalidate(monthTransactionsProvider);
-                    ref.invalidate(monthIncomeProvider);
-                    ref.invalidate(monthExpenseProvider);
-                    ref.invalidate(monthBalanceProvider);
-                    ref.invalidate(expensesByCategoryProvider);
+                    invalidateAllFinance(ref);
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   child: Text(l10n.save),
@@ -459,33 +526,38 @@ class _FinanceMiniCard extends StatelessWidget {
   final double amount;
   final Color color;
   final IconData icon;
+  final VoidCallback? onTap;
 
   const _FinanceMiniCard({
     required this.label,
     required this.amount,
     required this.color,
     required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const Gap(4),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          const Gap(4),
-          Text(
-            '${amount.toStringAsFixed(0)} ₽',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 16),
+            const Gap(4),
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            const Gap(4),
+            Text(
+              '${amount.toStringAsFixed(0)} ₽',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color),
+            ),
+          ],
+        ),
       ),
     );
   }

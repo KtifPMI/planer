@@ -82,7 +82,12 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               session: todaySession,
               l10n: l10n,
               theme: theme,
-              onRefresh: () => setState(() {}),
+              onRefresh: () {
+                ref.invalidate(todaySessionProvider);
+                ref.invalidate(workoutCountThisMonthProvider);
+                ref.invalidate(workoutCountThisWeekProvider);
+                setState(() {});
+              },
             )
           else if (todayTemplates.isNotEmpty)
             ...todayTemplates.map((t) => _TemplateCard(
@@ -262,11 +267,12 @@ class _TemplateCard extends StatelessWidget {
             const Gap(12),
             ...template.exercises.map((ex) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
+              child:               Row(
                 children: [
                   Expanded(child: Text(ex.name, style: theme.textTheme.bodyMedium)),
                   Text(
-                    '${ex.targetSets}×${ex.targetReps} ${ex.targetWeight > 0 ? "@ ${ex.targetWeight.toInt()} кг" : ""}',
+                    '${ex.targetSets} ${l10n.setsCount.toLowerCase()} × ${ex.targetReps} ${l10n.repsShort.toLowerCase()}'
+                    '${ex.targetWeight > 0 ? " · ${ex.targetWeight.toInt()} ${l10n.kg}" : ""}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.5),
                     ),
@@ -306,9 +312,15 @@ class _ActiveWorkoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final allCompleted = session.exercises.isNotEmpty &&
+        session.exercises.every((ex) =>
+            ex.sets.isNotEmpty && ex.sets.every((s) => s.completed));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: AppColors.workoutPrimary.withOpacity(0.05),
+      color: allCompleted
+          ? AppColors.success.withOpacity(0.08)
+          : AppColors.workoutPrimary.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -316,7 +328,11 @@ class _ActiveWorkoutCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.play_circle, color: AppColors.workoutPrimary, size: 20),
+                Icon(
+                  allCompleted ? Icons.check_circle : Icons.play_circle,
+                  color: allCompleted ? AppColors.success : AppColors.workoutPrimary,
+                  size: 20,
+                ),
                 const Gap(8),
                 Expanded(
                   child: Text(
@@ -324,6 +340,18 @@ class _ActiveWorkoutCard extends StatelessWidget {
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
+                if (allCompleted)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      l10n.completed,
+                      style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w600),
+                    ),
+                  ),
               ],
             ),
             const Gap(12),
@@ -364,12 +392,27 @@ class _ExerciseLogTileState extends State<_ExerciseLogTile> {
   @override
   Widget build(BuildContext context) {
     final ex = widget.exercise;
+    final allSetsDone = ex.sets.isNotEmpty && ex.sets.every((s) => s.completed);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(ex.exerciseName, style: widget.theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          Row(
+            children: [
+              Icon(
+                allSetsDone ? Icons.check_circle : Icons.fitness_center,
+                size: 16,
+                color: allSetsDone ? AppColors.success : widget.theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+              const Gap(6),
+              Text(ex.exerciseName, style: widget.theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              if (allSetsDone) ...[
+                const Gap(4),
+                Text('✓', style: TextStyle(color: AppColors.success, fontSize: 14, fontWeight: FontWeight.bold)),
+              ],
+            ],
+          ),
           const Gap(4),
           ...ex.sets.map((s) => _SetRow(
             set: s,

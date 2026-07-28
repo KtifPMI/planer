@@ -49,3 +49,12 @@ final todayWorkoutTemplatesProvider = Provider<List<WorkoutTemplate>>((ref) {
 final todaySessionProvider = Provider<WorkoutSession?>((ref) {
   return ref.watch(workoutRepositoryProvider).getSessionForDate(DateTime.now());
 });
+
+final workoutTemplatesThisWeekProvider = Provider<int>((ref) {
+  final templates = ref.watch(allWorkoutTemplatesProvider);
+  return templates.where((t) => t.dayOfWeek > 0).length;
+});
+
+final workoutCountThisWeekProvider = Provider<int>((ref) {
+  return ref.watch(workoutRepositoryProvider).getSessionsForWeek(DateTime.now());
+});

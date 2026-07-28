@@ -59,6 +59,12 @@ final expensesByCategoryProvider = Provider<Map<String, double>>((ref) {
       .getExpensesByCategory(month.year, month.month);
 });
 
+final incomeByCategoryProvider = Provider<Map<String, double>>((ref) {
+  final month = ref.watch(selectedMonthProvider);
+  return ref.watch(financeRepositoryProvider)
+      .getIncomeByCategory(month.year, month.month);
+});
+
 // Savings
 final allSavingsProvider = Provider<List<SavingsGoal>>((ref) {
   return ref.watch(financeRepositoryProvider).getAllSavings();
@@ -105,3 +111,18 @@ final expensePlanProgressProvider = Provider<double>((ref) {
   return ref.watch(financeRepositoryProvider)
       .getPlanProgress(TransactionType.expense, month.year, month.month);
 });
+
+void invalidateAllFinance(WidgetRef ref) {
+  ref.invalidate(monthIncomeProvider);
+  ref.invalidate(monthExpenseProvider);
+  ref.invalidate(monthBalanceProvider);
+  ref.invalidate(monthTransactionsProvider);
+  ref.invalidate(expensesByCategoryProvider);
+  ref.invalidate(incomeByCategoryProvider);
+  ref.invalidate(allSavingsProvider);
+  ref.invalidate(totalSavedProvider);
+  ref.invalidate(totalTargetProvider);
+  ref.invalidate(allDebtsProvider);
+  ref.invalidate(totalDebtProvider);
+  ref.invalidate(totalPaidProvider);
+}
