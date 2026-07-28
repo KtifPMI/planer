@@ -83,9 +83,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               l10n: l10n,
               theme: theme,
               onRefresh: () {
-                ref.invalidate(todaySessionProvider);
-                ref.invalidate(workoutCountThisMonthProvider);
-                ref.invalidate(workoutCountThisWeekProvider);
+                invalidateAllWorkouts(ref);
                 setState(() {});
               },
             )
@@ -131,8 +129,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                   );
                   if (confirm == true) {
                     await ref.read(workoutRepositoryProvider).deleteSession(w.id);
-                    ref.invalidate(allWorkoutsProvider);
-                    ref.invalidate(workoutCountThisMonthProvider);
+                    invalidateAllWorkouts(ref);
                   }
                 },
               ),
@@ -177,9 +174,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
       templateId: template.id,
     );
     await repo.addSession(session);
-    ref.invalidate(todaySessionProvider);
-    ref.invalidate(allWorkoutsProvider);
-    ref.invalidate(workoutCountThisMonthProvider);
+    invalidateAllWorkouts(ref);
   }
 
   void _showTemplateManager(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
