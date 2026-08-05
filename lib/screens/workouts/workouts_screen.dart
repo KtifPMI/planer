@@ -223,6 +223,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
       templateId: template.id,
     );
     await repo.addSession(session);
+    ref.read(selectedWorkoutMonthProvider.notifier).state = DateTime.now();
     invalidateAllWorkouts(ref);
   }
 
