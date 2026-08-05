@@ -210,6 +210,9 @@ class AppLocalizations {
       'selectDays': 'Выберите дни',
       'scheduledForToday': 'Запланировано на сегодня',
       'noHabitsToday': 'На сегодня нет запланированных привычек',
+      'navigation': 'Навигация',
+      'customizeTabs': 'Настроить меню',
+      'customizeTabsHint': 'Выберите разделы для нижнего меню',
     },
     'en': {
       'appTitle': 'Tracker',
@@ -409,6 +412,9 @@ class AppLocalizations {
       'selectDays': 'Select days',
       'scheduledForToday': 'Scheduled for today',
       'noHabitsToday': 'No habits scheduled for today',
+      'navigation': 'Navigation',
+      'customizeTabs': 'Customize menu',
+      'customizeTabsHint': 'Choose sections for the bottom menu',
     },
   };
 
@@ -597,6 +603,9 @@ class AppLocalizations {
   String get selectDays => _t('selectDays');
   String get scheduledForToday => _t('scheduledForToday');
   String get noHabitsToday => _t('noHabitsToday');
+  String get navigation => _t('navigation');
+  String get customizeTabs => _t('customizeTabs');
+  String get customizeTabsHint => _t('customizeTabsHint');
 
   String monthName(int month) {
     const months = [

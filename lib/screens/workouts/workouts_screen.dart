@@ -25,27 +25,59 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
     final todayTemplates = ref.watch(todayWorkoutTemplatesProvider);
     final todaySession = ref.watch(todaySessionProvider);
     final count = ref.watch(workoutCountThisMonthProvider);
+    final weekCount = ref.watch(workoutCountThisWeekProvider);
+    final month = ref.watch(selectedWorkoutMonthProvider);
+    final progressList = ref.watch(exerciseProgressListProvider);
+
+    final isCurrentMonth = month.year == DateTime.now().year && month.month == DateTime.now().month;
 
     return Scaffold(
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // Title + month navigation
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.workouts, style: theme.textTheme.headlineLarge),
-                    const Gap(4),
-                    Text(
-                      '${l10n.dayNameFull(DateTime.now().weekday)}, ${DateTime.now().day} ${l10n.monthName(DateTime.now().month)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
+              Flexible(
+                fit: FlexFit.loose,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(l10n.workouts, style: theme.textTheme.headlineLarge),
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () {
+                  ref.read(selectedWorkoutMonthProvider.notifier).state =
+                      DateTime(month.year, month.month - 1);
+                },
+              ),
+              Text(
+                l10n.monthName(month.month),
+                style: theme.textTheme.titleLarge,
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () {
+                  ref.read(selectedWorkoutMonthProvider.notifier).state =
+                      DateTime(month.year, month.month + 1);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.calendar_today, size: 20,
+                  color: isCurrentMonth ? null : AppColors.primary),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: month,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    ref.read(selectedWorkoutMonthProvider.notifier).state = picked;
+                  }
+                },
               ),
               IconButton(
                 onPressed: () => _showTemplateManager(context, ref, l10n),
@@ -67,9 +99,9 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               )),
               const Gap(12),
               Expanded(child: _StatCard(
-                label: l10n.total,
-                value: '${ref.watch(allWorkoutsProvider).length}',
-                icon: Icons.history,
+                label: l10n.week,
+                value: '$weekCount',
+                icon: Icons.date_range,
                 color: AppColors.workoutSecondary,
               )),
             ],
@@ -140,6 +172,18 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               ),
             ),
           )),
+          const Gap(16),
+
+          // Weight progression
+          if (progressList.isNotEmpty) ...[
+            Text(l10n.monthlyProgress, style: theme.textTheme.titleLarge),
+            const Gap(8),
+            ...progressList.take(15).map((p) => _ProgressCard(
+              progress: p,
+              l10n: l10n,
+              theme: theme,
+            )),
+          ],
         ],
       ),
       floatingActionButton: Column(
@@ -996,5 +1040,69 @@ class _TemplateEditSheetState extends ConsumerState<_TemplateEditSheet> {
     ref.invalidate(todayWorkoutTemplatesProvider);
 
     if (mounted) Navigator.pop(context);
+  }
+}
+
+// --- Weight progression card ---
+class _ProgressCard extends StatelessWidget {
+  final ProgressEntry progress;
+  final AppLocalizations l10n;
+  final ThemeData theme;
+
+  const _ProgressCard({required this.progress, required this.l10n, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              progress.exerciseName,
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const Gap(8),
+            SizedBox(
+              height: 120,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: progress.entries.map((e) {
+                  final maxWeight = progress.entries.map((x) => x.weight).reduce((a, b) => a > b ? a : b);
+                  final barHeight = maxWeight > 0 ? (e.weight / maxWeight * 100).clamp(4.0, 100.0) : 4.0;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1),
+                      child: Tooltip(
+                        message: '${e.weight.toInt()} ${l10n.kg} × ${e.reps} ${l10n.repsShort}',
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${e.weight.toInt()}',
+                              style: theme.textTheme.labelSmall,
+                            ),
+                            const Gap(2),
+                            Container(
+                              height: barHeight,
+                              decoration: BoxDecoration(
+                                color: AppColors.workoutPrimary.withOpacity(0.7),
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

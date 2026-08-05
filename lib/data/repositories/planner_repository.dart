@@ -7,8 +7,10 @@ class PlannerRepository {
   final _box = StorageService.weeklyPlansBox;
   static const _uuid = Uuid();
 
-  WeeklyPlan getCurrentWeek() {
-    final weekStart = app_date.startOfWeek(DateTime.now());
+  WeeklyPlan getCurrentWeek() => getOrCreateWeek(DateTime.now());
+
+  WeeklyPlan getOrCreateWeek(DateTime date) {
+    final weekStart = app_date.startOfWeek(date);
     final existing = _box.values
         .where((p) => app_date.isSameDay(p.weekStart, weekStart))
         .toList();

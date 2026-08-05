@@ -7,8 +7,14 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return WorkoutRepository();
 });
 
+final selectedWorkoutMonthProvider = StateProvider<DateTime>((ref) {
+  return DateTime.now();
+});
+
 final allWorkoutsProvider = Provider((ref) {
-  return ref.watch(workoutRepositoryProvider).getAllSessions();
+  final month = ref.watch(selectedWorkoutMonthProvider);
+  return ref.watch(workoutRepositoryProvider)
+      .getSessionsForMonth(month.year, month.month);
 });
 
 final monthWorkoutsProvider = Provider((ref) {
@@ -22,10 +28,50 @@ final latestWorkoutProvider = Provider((ref) {
 });
 
 final workoutCountThisMonthProvider = Provider<int>((ref) {
-  final now = DateTime.now();
+  final month = ref.watch(selectedWorkoutMonthProvider);
   return ref.watch(workoutRepositoryProvider)
-      .getSessionsThisMonth(now.year, now.month);
+      .getSessionsThisMonth(month.year, month.month);
 });
+
+final exerciseProgressListProvider = Provider<List<ProgressEntry>>((ref) {
+  final repo = ref.watch(workoutRepositoryProvider);
+  final allSessions = repo.getAllSessions();
+  final Map<String, List<WeightEntry>> exerciseData = {};
+
+  for (final session in allSessions) {
+    for (final ex in session.exercises) {
+      if (ex.sets.isEmpty) continue;
+      exerciseData.putIfAbsent(ex.exerciseName, () => []);
+      final maxSet = ex.sets.reduce((a, b) => a.weight >= b.weight ? a : b);
+      exerciseData[ex.exerciseName]!.add(WeightEntry(
+        date: session.date,
+        weight: maxSet.weight,
+        reps: maxSet.reps,
+      ));
+    }
+  }
+
+  return exerciseData.entries
+      .map((e) => ProgressEntry(
+            exerciseName: e.key,
+            entries: e.value..sort((a, b) => a.date.compareTo(b.date)),
+          ))
+      .toList()
+    ..sort((a, b) => b.entries.length.compareTo(a.entries.length));
+});
+
+class ProgressEntry {
+  final String exerciseName;
+  final List<WeightEntry> entries;
+  const ProgressEntry({required this.exerciseName, required this.entries});
+}
+
+class WeightEntry {
+  final DateTime date;
+  final double weight;
+  final int reps;
+  const WeightEntry({required this.date, required this.weight, required this.reps});
+}
 
 final exerciseTemplatesProvider = Provider((ref) {
   return ref.watch(workoutRepositoryProvider).getAllTemplates();
@@ -69,4 +115,5 @@ void invalidateAllWorkouts(WidgetRef ref) {
   ref.invalidate(todayWorkoutTemplatesProvider);
   ref.invalidate(workoutTemplatesThisWeekProvider);
   ref.invalidate(workoutCountThisWeekProvider);
+  ref.invalidate(exerciseProgressListProvider);
 }

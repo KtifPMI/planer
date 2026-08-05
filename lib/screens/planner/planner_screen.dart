@@ -17,17 +17,64 @@ class PlannerScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final plan = ref.watch(currentWeekProvider);
     final analytics = ref.watch(weekAnalyticsProvider);
+    final weekStart = ref.watch(selectedPlannerWeekProvider);
 
     final now = DateTime.now();
-    final weekStart = app_date.startOfWeek(now);
+    final isCurrentWeek = app_date.isSameDay(weekStart, app_date.startOfWeek(now));
 
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text(l10n.weeklyPlaner, style: theme.textTheme.headlineLarge),
+        // Week navigation
+        Row(
+          children: [
+            Flexible(
+              fit: FlexFit.loose,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(l10n.weeklyPlaner, style: theme.textTheme.headlineLarge),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () {
+                ref.read(selectedPlannerWeekProvider.notifier).state =
+                    weekStart.subtract(const Duration(days: 7));
+              },
+            ),
+            Text(
+              l10n.monthName(weekStart.month),
+              style: theme.textTheme.titleLarge,
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () {
+                ref.read(selectedPlannerWeekProvider.notifier).state =
+                    weekStart.add(const Duration(days: 7));
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.calendar_today, size: 20,
+                color: isCurrentWeek ? null : AppColors.primary),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: weekStart,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) {
+                  ref.read(selectedPlannerWeekProvider.notifier).state =
+                      app_date.startOfWeek(picked);
+                }
+              },
+            ),
+          ],
+        ),
         const Gap(4),
         Text(
-          '${app_date.formatDate(weekStart)} — ${app_date.formatDate(app_date.endOfWeek(now))}',
+          '${app_date.formatDate(weekStart)} — ${app_date.formatDate(weekStart.add(const Duration(days: 6)))}',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
